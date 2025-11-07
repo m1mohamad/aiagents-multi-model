@@ -1,0 +1,20 @@
+# Age encryption keys
+*.age-key.txt
+.age-key.txt
+
+# Encrypted secrets
+*.secrets.age
+.secrets.age
+
+# Logs
+/ai/logs/*
+
+# Backups
+*.bak
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store

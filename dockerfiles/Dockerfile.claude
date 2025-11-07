@@ -1,0 +1,7 @@
+FROM localhost/ai-base:secure
+
+USER root
+RUN pip3 install anthropic python-dotenv --no-cache-dir
+
+USER agent
+WORKDIR /home/agent
