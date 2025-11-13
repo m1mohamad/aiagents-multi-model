@@ -1,24 +1,27 @@
 # Makefile for AI Multi-Agent System
 # Simplifies deployment and management
 
-.PHONY: help install deploy test clean restart status logs
+.PHONY: help install deploy deploy-phase4 deploy-full test clean restart status logs
 
 # Default target
 help:
 	@echo "AI Multi-Agent System - Available Commands:"
 	@echo ""
-	@echo "  make install    - Install prerequisites (podman, age)"
-	@echo "  make deploy     - Run full deployment (Phase 1-3)"
-	@echo "  make test       - Verify all components working"
-	@echo "  make status     - Show system status"
-	@echo "  make logs       - Show container logs"
-	@echo "  make restart    - Restart all containers"
-	@echo "  make stop       - Stop all containers"
-	@echo "  make start      - Start all containers"
-	@echo "  make clean      - Remove all containers and pod"
-	@echo "  make reset      - Complete cleanup (containers + /ai directory)"
+	@echo "  make install       - Install prerequisites (podman, age)"
+	@echo "  make deploy        - Run deployment (Phase 1-3)"
+	@echo "  make deploy-phase4 - Deploy Phase 4 (full APIs + conversation history)"
+	@echo "  make deploy-full   - Deploy everything (Phase 1-4)"
+	@echo "  make test          - Verify all components working"
+	@echo "  make status        - Show system status"
+	@echo "  make contexts      - Show conversation contexts for all agents"
+	@echo "  make logs          - Show container logs"
+	@echo "  make restart       - Restart all containers"
+	@echo "  make stop          - Stop all containers"
+	@echo "  make start         - Start all containers"
+	@echo "  make clean         - Remove all containers and pod"
+	@echo "  make reset         - Complete cleanup (containers + /ai directory)"
 	@echo ""
-	@echo "Quick Start: make install && make deploy"
+	@echo "Quick Start: make install && make deploy-full"
 
 # Install prerequisites
 install:
@@ -27,10 +30,19 @@ install:
 	@command -v age >/dev/null || sudo apt install -y age
 	@echo "✓ Prerequisites installed"
 
-# Full deployment (Phase 1-3)
+# Deployment (Phase 1-3)
 deploy:
-	@echo "Starting full deployment..."
+	@echo "Starting deployment (Phase 1-3)..."
 	@sudo bash deploy.sh
+
+# Phase 4 deployment
+deploy-phase4:
+	@echo "Deploying Phase 4 (Full APIs + Conversation History)..."
+	@sudo bash scripts/setup-phase4.sh
+
+# Full deployment (Phase 1-4)
+deploy-full: deploy deploy-phase4
+	@echo "✓ Full deployment complete (Phase 1-4)"
 
 # Test all components
 test:
@@ -58,8 +70,22 @@ status:
 	@test -f /ai/grok/context/.secrets.age && echo "✓ Grok configured" || echo "✗ Grok not configured"
 	@test -f /ai/gemini/context/.secrets.age && echo "✓ Gemini configured" || echo "✗ Gemini not configured"
 	@echo ""
+	@echo "=== Phase 4 Status ==="
+	@test -f /usr/local/bin/claude && echo "✓ Phase 4 installed (host CLI available)" || echo "✗ Phase 4 not installed"
+	@echo ""
 	@echo "=== Directory Structure ==="
 	@ls -lh /ai/ 2>/dev/null || echo "/ai directory not created yet"
+
+# Show conversation contexts
+contexts:
+	@echo "=== Claude Contexts ==="
+	@test -d /ai/claude/history && ls -1 /ai/claude/history | grep -v "^\\." || echo "No contexts found"
+	@echo ""
+	@echo "=== Grok Contexts ==="
+	@test -d /ai/grok/history && ls -1 /ai/grok/history | grep -v "^\\." || echo "No contexts found"
+	@echo ""
+	@echo "=== Gemini Contexts ==="
+	@test -d /ai/gemini/history && ls -1 /ai/gemini/history | grep -v "^\\." || echo "No contexts found"
 
 # Show container logs
 logs:
