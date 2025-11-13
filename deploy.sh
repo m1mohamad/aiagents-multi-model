@@ -58,7 +58,7 @@ echo "=========================================="
 echo ""
 
 if [ -f "scripts/setup-ai-foundation.sh" ]; then
-    bash scripts/setup-phase1.sh
+    bash scripts/setup-ai-foundation.sh
 else
     echo -e "${RED}ERROR: scripts/setup-ai-foundation.sh not found${NC}"
     echo "Make sure you're running this from the repository root"
