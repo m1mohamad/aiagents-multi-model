@@ -3,9 +3,11 @@
 
 **Deploy Claude, Grok, and Gemini in isolated containers with encrypted credentials and CLI access.**
 
-[![Status](https://img.shields.io/badge/Status-Phase%204%20Complete-green)]()
+[![Status](https://img.shields.io/badge/Status-Production%20Ready-green)]()
 [![Tested](https://img.shields.io/badge/Tested-Ubuntu%2022.04-blue)]()
 [![Deploy Time](https://img.shields.io/badge/Deploy-5--10%20min-brightgreen)]()
+[![Configuration](https://img.shields.io/badge/Full%20APIs-Configured-blue)]()
+
 
 ---
 
@@ -16,13 +18,13 @@
 git clone <your-repo-url>
 cd ai-agents-multi-model
 
-# Deploy everything (Phase 1-4)
+# Deploy everything
 make deploy-full
 
 # Or step by step:
-make install          # Prerequisites
-make deploy           # Phase 1-3 (foundation)
-make deploy-phase4    # Phase 4 (full APIs + conversation history)
+make install    # Prerequisites
+make deploy     # Infrastructure (containers, security)
+make config     # Full APIs & conversation history
 ```
 
 **That's it!** In 5-10 minutes you'll have:
@@ -55,9 +57,9 @@ make deploy-phase4    # Phase 4 (full APIs + conversation history)
 - **File isolation** - Only `/ai` directory accessible
 - **Audit logs** - Write-only log directory
 
-### CLI Usage (Phase 4)
+### CLI Usage (After Configuration)
 ```bash
-# Simple commands from host (after Phase 4)
+# Simple commands from host (after running 'make config')
 claude "Explain quantum computing"
 grok "What's trending in AI?"
 gemini "Calculate fibonacci sequence"
@@ -70,7 +72,7 @@ claude --context myproject "What about OAuth2 flow?"
 claude --list                    # List all conversation contexts
 claude --switch another-project  # Switch active context
 
-# Container access (Phase 1-3)
+# Container access (basic deployment)
 sudo podman exec gemini-agent /home/agent/gemini-chat "What is Kubernetes?"
 ```
 
@@ -105,18 +107,21 @@ make install
 ### Using Makefile (Recommended)
 
 ```bash
-make install        # Install prerequisites
-make deploy-full    # Deploy everything (Phase 1-4)
-make status         # Check status
-make contexts       # Show conversation contexts
-make test           # Test agents
+make install      # Install prerequisites
+make deploy-full  # Deploy everything (infrastructure + configuration)
+make status       # Check status
+make contexts     # Show conversation contexts
+make test         # Test agents
 ```
 
 ### Manual Deployment
 
 ```bash
+# Deploy infrastructure
 sudo bash deploy.sh
-# Runs: Phase 1 (Foundation) → Phase 2 (Containers) → Phase 3 (Auth)
+
+# Configure full APIs
+sudo bash scripts/setup-phase4.sh
 ```
 
 ---
@@ -156,7 +161,7 @@ make test
 
 ## Usage
 
-### Phase 4 Commands (Recommended)
+### Recommended Usage (After Configuration)
 
 ```bash
 # Simple queries from anywhere on host
@@ -182,7 +187,7 @@ make restart     # Restart containers
 make logs        # View logs
 ```
 
-### Phase 1-3 Commands (Container Access)
+### Alternative: Direct Container Access
 
 ```bash
 # Query agents directly
@@ -227,48 +232,48 @@ sudo cat /ai/gemini/workspace/output.txt
 
 ## Current Status
 
-### What Works (Phase 4) ✅
-- ✅ **Claude:** Full Anthropic SDK integration with conversation history
-- ✅ **Grok:** Full xAI API integration with conversation history
-- ✅ **Gemini:** Full Google AI SDK with conversation history
+### What Works ✅
+- ✅ **Infrastructure:** Secure containerized deployment with Podman
+- ✅ **Full API Implementations:** Claude, Grok, and Gemini with complete SDK integration
 - ✅ **Conversation Memory:** Multi-turn conversations per project/topic
 - ✅ **Context Management:** Project-specific conversation isolation
-- ✅ **Security:** All credentials encrypted with age
-- ✅ **Container Isolation:** Proper rootful Podman isolation
-- ✅ **Host CLI:** Simple `claude`, `grok`, `gemini` commands
-- ✅ **Agent Bridge:** Basic agent-to-agent communication
+- ✅ **Security:** All credentials encrypted with age encryption
+- ✅ **Container Isolation:** Proper rootful Podman with network restrictions
+- ✅ **Host CLI:** Simple `claude`, `grok`, `gemini` commands available system-wide
+- ✅ **Agent Communication:** Basic agent-to-agent messaging
 
-### Phase 5 (Planned)
-- 📋 Advanced agent orchestration
-- 📋 Workflow engine (multi-agent workflows)
-- 📋 Meta-agent conductor
-- 📋 Local LLM support (Ollama, DeepSeek)
+### Future Enhancements (Planned)
+- 📋 Advanced agent orchestration workflows
+- 📋 Workflow engine for multi-agent task automation
+- 📋 Meta-agent conductor for intelligent routing
+- 📋 Local LLM support (Ollama, DeepSeek integration)
 
 ---
 
-## Roadmap
+## Implementation Roadmap
 
-### ✅ Phase 1-3: Foundation (Complete)
-- Container infrastructure
-- Encryption & security
-- Basic CLI wrappers
-- Base Gemini API
+### ✅ Infrastructure Deployment (Complete)
+- Podman container orchestration
+- Age encryption for credentials
+- Network and file system isolation
+- Base container images
+- Security boundaries
 
-### ✅ Phase 4: Full APIs & Conversations (Complete)
-- Full Claude API integration
-- Full Grok API integration
-- Enhanced Gemini API
-- Conversation history per project/topic
-- Multi-turn conversations with context
-- Host-side CLI commands
-- Basic agent-to-agent communication
+### ✅ Full API Configuration (Complete)
+- Claude Anthropic SDK integration
+- Grok xAI API integration
+- Gemini Google AI SDK integration
+- Conversation history persistence
+- Multi-turn context management
+- Host-side CLI commands (`claude`, `grok`, `gemini`)
+- Agent-to-agent communication bridge
 
-### 📋 Phase 5: Advanced Orchestration (Planned)
-- Workflow engine for multi-agent tasks
-- Config-driven agent spawning
-- Meta-agent conductor
-- Local LLM support (Ollama, DeepSeek)
-- Advanced agent collaboration
+### 📋 Advanced Features (Future)
+- Workflow automation engine
+- Config-driven agent orchestration
+- Meta-agent intelligent routing
+- Local LLM integration (Ollama, DeepSeek)
+- Advanced multi-agent collaboration
 
 ---
 
@@ -343,7 +348,7 @@ MIT License
 
 ---
 
-**Version:** 2.0 (Phase 4 Complete)
+**Version:** 2.0 (Production Ready)
 **Last Updated:** November 13, 2025
 **Tested:** Ubuntu 22.04, Podman 4.9+
 

@@ -1,10 +1,12 @@
-# Phase 4: Full API & Conversation History
+# Full API Configuration & Conversation History
 
 **Production-ready AI agents with conversation persistence and context management**
 
+This guide covers the full API configuration phase that transforms basic container deployment into a complete multi-agent system with conversation memory.
+
 ---
 
-## What's New in Phase 4
+## What This Configuration Provides
 
 ### ✅ Full API Implementations
 - **Claude**: Complete Anthropic SDK integration (not just token validation)
@@ -26,14 +28,17 @@
 ## Installation
 
 ### Prerequisites
-- Phase 1-3 complete (containers running)
+- Infrastructure deployed (containers running)
 - Credentials configured for desired agents
-- Python dependencies installed
+- Python dependencies installed in containers
 
-### Deploy Phase 4
+### Apply Configuration
 
 ```bash
-# From repository root
+# Using Makefile (recommended)
+make config
+
+# Or manually
 sudo bash scripts/setup-phase4.sh
 ```
 
@@ -290,15 +295,14 @@ sudo chown -R $USER:aiagent /ai/*/history
 
 ---
 
-## Next: Phase 5
+## Next Steps: Advanced Features
 
-**Agent Orchestration & Collaboration:**
-- Agent-to-agent communication
-- Workflow engine (multi-agent workflows)
-- Task delegation and routing
+**Potential enhancements for future development:**
+- Advanced agent orchestration
+- Workflow automation engine
+- Task delegation and intelligent routing
 - Meta-agent conductor
-
-See: `docs/phase5-orchestration.md` (coming soon)
+- Local LLM integration (Ollama, DeepSeek)
 
 ---
 
@@ -306,7 +310,7 @@ See: `docs/phase5-orchestration.md` (coming soon)
 
 - **Version:** 1.0
 - **Date:** November 13, 2025
-- **Status:** Phase 4 Complete
-- **Dependencies:** Phase 1-3
+- **Status:** Full API Configuration
+- **Dependencies:** Infrastructure deployment complete
 
 ---

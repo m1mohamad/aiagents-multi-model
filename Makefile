@@ -1,25 +1,31 @@
 # Makefile for AI Multi-Agent System
 # Simplifies deployment and management
 
-.PHONY: help install deploy deploy-phase4 deploy-full test clean restart status logs
+.PHONY: help install deploy config reconfigure deploy-full test clean restart status logs
 
 # Default target
 help:
 	@echo "AI Multi-Agent System - Available Commands:"
 	@echo ""
+	@echo "Deployment:"
 	@echo "  make install       - Install prerequisites (podman, age)"
-	@echo "  make deploy        - Run deployment (Phase 1-3)"
-	@echo "  make deploy-phase4 - Deploy Phase 4 (full APIs + conversation history)"
-	@echo "  make deploy-full   - Deploy everything (Phase 1-4)"
+	@echo "  make deploy        - Deploy infrastructure (containers, security)"
+	@echo "  make config        - Configure full APIs & conversation history"
+	@echo "  make reconfigure   - Re-apply configuration (if needed)"
+	@echo "  make deploy-full   - Complete setup (deploy + config)"
+	@echo ""
+	@echo "Management:"
 	@echo "  make test          - Verify all components working"
 	@echo "  make status        - Show system status"
-	@echo "  make contexts      - Show conversation contexts for all agents"
-	@echo "  make logs          - Show container logs"
+	@echo "  make contexts      - Show conversation contexts"
 	@echo "  make restart       - Restart all containers"
 	@echo "  make stop          - Stop all containers"
 	@echo "  make start         - Start all containers"
-	@echo "  make clean         - Remove all containers and pod"
-	@echo "  make reset         - Complete cleanup (containers + /ai directory)"
+	@echo "  make logs          - Show container logs"
+	@echo ""
+	@echo "Cleanup:"
+	@echo "  make clean         - Remove containers and pod"
+	@echo "  make reset         - Complete cleanup (WARNING: removes /ai)"
 	@echo ""
 	@echo "Quick Start: make install && make deploy-full"
 
@@ -30,19 +36,30 @@ install:
 	@command -v age >/dev/null || sudo apt install -y age
 	@echo "✓ Prerequisites installed"
 
-# Deployment (Phase 1-3)
+# Deploy infrastructure (containers, security, base setup)
 deploy:
-	@echo "Starting deployment (Phase 1-3)..."
+	@echo "Deploying infrastructure..."
 	@sudo bash deploy.sh
 
-# Phase 4 deployment
-deploy-phase4:
-	@echo "Deploying Phase 4 (Full APIs + Conversation History)..."
+# Configure full APIs and conversation history
+config:
+	@echo "Configuring full APIs & conversation history..."
 	@sudo bash scripts/setup-phase4.sh
 
-# Full deployment (Phase 1-4)
-deploy-full: deploy deploy-phase4
-	@echo "✓ Full deployment complete (Phase 1-4)"
+# Reconfigure (re-apply configuration)
+reconfigure: config
+	@echo "✓ Configuration reapplied"
+
+# Complete deployment and configuration
+deploy-full: deploy config
+	@echo ""
+	@echo "=========================================="
+	@echo "✓ Complete setup finished!"
+	@echo "=========================================="
+	@echo ""
+	@echo "Infrastructure deployed and agents configured."
+	@echo "Use 'claude', 'grok', or 'gemini' commands from anywhere."
+	@echo ""
 
 # Test all components
 test:
@@ -70,8 +87,8 @@ status:
 	@test -f /ai/grok/context/.secrets.age && echo "✓ Grok configured" || echo "✗ Grok not configured"
 	@test -f /ai/gemini/context/.secrets.age && echo "✓ Gemini configured" || echo "✗ Gemini not configured"
 	@echo ""
-	@echo "=== Phase 4 Status ==="
-	@test -f /usr/local/bin/claude && echo "✓ Phase 4 installed (host CLI available)" || echo "✗ Phase 4 not installed"
+	@echo "=== Configuration Status ==="
+	@test -f /usr/local/bin/claude && echo "✓ Full APIs configured (host CLI available)" || echo "✗ Full APIs not configured yet (run 'make config')"
 	@echo ""
 	@echo "=== Directory Structure ==="
 	@ls -lh /ai/ 2>/dev/null || echo "/ai directory not created yet"
