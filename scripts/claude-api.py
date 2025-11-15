@@ -19,7 +19,42 @@ CONTEXT_DIR = Path("/ai/claude/context")
 HISTORY_DIR = Path("/ai/claude/history")
 SECRETS_FILE = CONTEXT_DIR / ".secrets.age"
 AGE_KEY_FILE = Path.home() / ".age-key.txt"
+DEVICE_ID_FILE = CONTEXT_DIR / ".device_id"
 CLAUDE_API_URL = "https://claude.ai/api"
+
+
+def get_device_id():
+    """Get or generate anthropic device ID"""
+    if DEVICE_ID_FILE.exists():
+        return DEVICE_ID_FILE.read_text().strip()
+
+    # Generate new device ID
+    device_id = str(uuid.uuid4())
+    CONTEXT_DIR.mkdir(parents=True, exist_ok=True)
+    DEVICE_ID_FILE.write_text(device_id)
+    return device_id
+
+
+def get_headers(session_token, accept_type="application/json"):
+    """Generate complete browser headers for Claude API"""
+    device_id = get_device_id()
+
+    return {
+        'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:144.0) Gecko/20100101 Firefox/144.0',
+        'Accept': accept_type,
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Accept-Encoding': 'gzip, deflate, br, zstd',
+        'Content-Type': 'application/json',
+        'anthropic-client-platform': 'web_claude_ai',
+        'anthropic-device-id': device_id,
+        'Origin': 'https://claude.ai',
+        'Referer': 'https://claude.ai/',
+        'Cookie': f'sessionKey={session_token}; anthropic-device-id={device_id}',
+        'Connection': 'keep-alive',
+        'Sec-Fetch-Dest': 'empty',
+        'Sec-Fetch-Mode': 'cors',
+        'Sec-Fetch-Site': 'same-origin',
+    }
 
 
 def decrypt_session_token():
@@ -40,16 +75,10 @@ def decrypt_session_token():
 def get_organization_id(session_token):
     """Get the organization ID from Claude session"""
     try:
-        headers = {
-            "Cookie": f"sessionKey={session_token}",
-            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36",
-            "Accept": "application/json"
-        }
-
         response = requests.get(
             f"{CLAUDE_API_URL}/organizations",
-            headers=headers,
-            timeout=10
+            headers=get_headers(session_token),
+            timeout=30
         )
 
         if response.status_code == 401:
@@ -83,13 +112,6 @@ def get_or_create_conversation(session_token, org_id, context_name):
 
     # Create new conversation
     try:
-        headers = {
-            "Cookie": f"sessionKey={session_token}",
-            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36",
-            "Content-Type": "application/json",
-            "Accept": "application/json"
-        }
-
         payload = {
             "name": f"Context: {context_name}",
             "uuid": str(uuid.uuid4())
@@ -97,9 +119,9 @@ def get_or_create_conversation(session_token, org_id, context_name):
 
         response = requests.post(
             f"{CLAUDE_API_URL}/organizations/{org_id}/chat_conversations",
-            headers=headers,
+            headers=get_headers(session_token),
             json=payload,
-            timeout=10
+            timeout=30
         )
 
         response.raise_for_status()
@@ -120,14 +142,8 @@ def get_or_create_conversation(session_token, org_id, context_name):
 def send_message_to_claude(session_token, org_id, conversation_uuid, message):
     """Send message to Claude and get response via SSE stream"""
     try:
-        headers = {
-            "Cookie": f"sessionKey={session_token}",
-            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36",
-            "Content-Type": "application/json",
-            "Accept": "text/event-stream",
-            "anthropic-client-sha": "unknown",
-            "anthropic-client-version": "unknown"
-        }
+        # Use SSE accept header for streaming endpoint
+        headers = get_headers(session_token, accept_type="text/event-stream")
 
         payload = {
             "prompt": message,
