@@ -96,9 +96,9 @@ make install
 ```
 
 ### AI Service Accounts
-- [Claude.ai](https://claude.ai) - Pro/Team subscription
-- [X.ai](https://x.ai) - Grok access  
-- [Google AI Studio](https://aistudio.google.com) - Free API key
+- [Anthropic Console](https://console.anthropic.com/settings/keys) - Claude API key (paid)
+- [X.ai](https://x.ai) - Grok access (Premium subscription)
+- [Google AI Studio](https://aistudio.google.com) - Gemini API key (free tier)
 
 ---
 
@@ -128,25 +128,34 @@ sudo bash scripts/setup-phase4.sh
 
 ## Configuration
 
-### 1. Extract Credentials
+### 1. Get API Keys/Tokens
 
-After deployment, configure AI credentials:
+After deployment, get credentials:
 
-- **Claude:** https://claude.ai → F12 → Cookies → `sessionKey`
-- **Grok:** https://x.ai → F12 → Cookies → `sso`
-- **Gemini:** https://aistudio.google.com/app/apikey
+- **Claude:** https://console.anthropic.com/settings/keys → Create API key
+- **Grok:** https://x.ai → F12 → Cookies → `sso` token
+- **Gemini:** https://aistudio.google.com/app/apikey → Create API key
 
-**Full guide:** [docs/token-extraction-guide.md](docs/token-extraction-guide.md)
+**Full guides:**
+- Claude: [docs/claude-api-key-setup.md](docs/claude-api-key-setup.md)
+- Grok/Gemini: [docs/token-extraction-guide.md](docs/token-extraction-guide.md)
 
 ### 2. Encrypt Credentials
 
 ```bash
-# Using Makefile
-make encrypt
+# Claude (API key)
+echo "sk-ant-api03-YOUR_API_KEY" | age -r $(grep "public key:" ~/.age-key.txt | awk '{print $NF}') \
+  -o /ai/claude/context/.secrets.age
 
-# Or manually
-echo "YOUR_TOKEN" | age -r $(grep "public key:" ~/.age-key.txt | awk '{print $NF}') \
-  -o /ai/agent/context/.secrets.age
+# Grok (SSO token)
+echo "YOUR_SSO_TOKEN" | age -r $(grep "public key:" ~/.age-key.txt | awk '{print $NF}') \
+  -o /ai/grok/context/.secrets.age
+
+# Gemini (API key)
+echo "YOUR_GEMINI_API_KEY" | age -r $(grep "public key:" ~/.age-key.txt | awk '{print $NF}') \
+  -o /ai/gemini/context/.secrets.age
+
+# Fix permissions
 sudo chmod 600 /ai/*/context/.secrets.age
 ```
 

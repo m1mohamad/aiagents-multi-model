@@ -65,7 +65,7 @@ echo ""
 echo "[3/6] Installing additional Python dependencies..."
 
 echo "  Installing in claude-agent..."
-podman exec -u root claude-agent pip3 install requests --upgrade --no-cache-dir >/dev/null 2>&1 || true
+podman exec -u root claude-agent pip3 install anthropic --upgrade --no-cache-dir >/dev/null 2>&1 || true
 
 echo "  Installing in grok-agent..."
 podman exec -u root grok-agent pip3 install requests --upgrade --no-cache-dir >/dev/null 2>&1 || true
