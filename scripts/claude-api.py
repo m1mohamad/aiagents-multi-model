@@ -48,8 +48,13 @@ def set_current_context(context_name):
     current_file.write_text(context_name)
 
 
-def ensure_context_exists(context_name):
-    """Create context directory and files if they don't exist"""
+def ensure_context_exists(context_name, project_name=None):
+    """Create context directory and files if they don't exist
+
+    Args:
+        context_name: Name of the conversation context
+        project_name: Optional project to associate with this context
+    """
     context_path = HISTORY_DIR / context_name
     context_path.mkdir(parents=True, exist_ok=True)
 
@@ -63,6 +68,10 @@ def ensure_context_exists(context_name):
             "last_used": datetime.now().isoformat(),
             "message_count": 0
         }
+        # Add project field if specified
+        if project_name:
+            metadata["project"] = project_name
+
         metadata_file.write_text(json.dumps(metadata, indent=2))
 
     if not conversation_file.exists():
@@ -144,15 +153,22 @@ def list_contexts():
         print("No contexts found.")
 
 
-def chat(message, context_name=None, max_history=10):
-    """Send message to Claude with conversation history"""
+def chat(message, context_name=None, project_name=None, max_history=10):
+    """Send message to Claude with conversation history
+
+    Args:
+        message: User message to send
+        context_name: Optional conversation context name
+        project_name: Optional project to associate with context
+        max_history: Maximum number of historical messages to load
+    """
 
     # Determine context
     if context_name is None:
         context_name = get_current_context()
 
     # Ensure context exists
-    ensure_context_exists(context_name)
+    ensure_context_exists(context_name, project_name)
     set_current_context(context_name)
 
     # Get API key
