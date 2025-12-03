@@ -2,6 +2,7 @@
 """
 Gemini Full API Implementation with Conversation History
 Supports multi-turn conversations and context management
+Phase 4.5: Adds project-level organization
 """
 
 import os
@@ -11,6 +12,7 @@ import subprocess
 import google.generativeai as genai
 from datetime import datetime
 from pathlib import Path
+from project_manager import ProjectManager
 
 # Configuration
 CONTEXT_DIR = Path("/ai/gemini/context")
@@ -48,8 +50,13 @@ def set_current_context(context_name):
     current_file.write_text(context_name)
 
 
-def ensure_context_exists(context_name):
-    """Create context directory and files if they don't exist"""
+def ensure_context_exists(context_name, project_name=None):
+    """Create context directory and files if they don't exist
+
+    Args:
+        context_name: Name of the conversation context
+        project_name: Optional project to associate with this context
+    """
     context_path = HISTORY_DIR / context_name
     context_path.mkdir(parents=True, exist_ok=True)
 
@@ -63,6 +70,10 @@ def ensure_context_exists(context_name):
             "last_used": datetime.now().isoformat(),
             "message_count": 0
         }
+        # Add project field if specified
+        if project_name:
+            metadata["project"] = project_name
+
         metadata_file.write_text(json.dumps(metadata, indent=2))
 
     if not conversation_file.exists():
@@ -144,16 +155,28 @@ def list_contexts():
         print("No contexts found.")
 
 
-def chat(message, context_name=None, max_history=10):
-    """Send message to Gemini with conversation history"""
+def chat(message, context_name=None, project_name=None, max_history=10):
+    """Send message to Gemini with conversation history
+
+    Args:
+        message: User message to send
+        context_name: Optional conversation context name
+        project_name: Optional project to associate with context
+        max_history: Maximum number of historical messages to load
+    """
 
     # Determine context
     if context_name is None:
         context_name = get_current_context()
 
     # Ensure context exists
-    ensure_context_exists(context_name)
+    ensure_context_exists(context_name, project_name)
     set_current_context(context_name)
+
+    # Link conversation to project if project specified
+    if project_name:
+        pm = ProjectManager(HISTORY_DIR)
+        pm.add_conversation(project_name, context_name)
 
     # Get API key
     api_key = decrypt_api_key()
@@ -203,6 +226,7 @@ def main():
         print("Usage:")
         print("  gemini-chat \"message\"                    # Use current context")
         print("  gemini-chat --context NAME \"message\"      # Use specific context")
+        print("  gemini-chat --project NAME \"message\"      # Use project context")
         print("  gemini-chat --list                        # List contexts")
         print("  gemini-chat --switch CONTEXT              # Switch context")
         sys.exit(1)
@@ -222,8 +246,9 @@ def main():
         print(f"Switched to context: {context_name}")
         sys.exit(0)
 
-    # Handle context flag
+    # Handle context and project flags
     context_name = None
+    project_name = None
     message_index = 1
 
     if sys.argv[1] == "--context":
@@ -233,11 +258,27 @@ def main():
         context_name = sys.argv[2]
         message_index = 3
 
-    # Get message
-    message = sys.argv[message_index]
+    elif sys.argv[1] == "--project":
+        if len(sys.argv) < 4:
+            print("Error: --project requires a name and message")
+            sys.exit(1)
+        project_name = sys.argv[2]
+        message_index = 3
+
+        # Create project if it doesn't exist
+        pm = ProjectManager(HISTORY_DIR)
+        if pm.create_project(project_name, f"Project created via CLI"):
+            print(f"Created new project: {project_name}", file=sys.stderr)
+
+        # Auto-generate context name from project (can be customized later)
+        # For now, use project name as context name
+        context_name = project_name
+
+    # Get message (join all remaining args for multi-word messages)
+    message = ' '.join(sys.argv[message_index:])
 
     # Chat
-    response = chat(message, context_name)
+    response = chat(message, context_name, project_name)
     print(response)
 
 
