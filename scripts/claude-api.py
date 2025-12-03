@@ -2,6 +2,7 @@
 """
 Claude API Implementation using Official Anthropic SDK
 Supports multi-turn conversations and context management
+Phase 4.5: Adds project-level organization
 """
 
 import os
@@ -11,6 +12,7 @@ import subprocess
 from datetime import datetime
 from pathlib import Path
 from anthropic import Anthropic
+from project_manager import ProjectManager
 
 # Configuration
 CONTEXT_DIR = Path("/ai/claude/context")
@@ -171,6 +173,11 @@ def chat(message, context_name=None, project_name=None, max_history=10):
     ensure_context_exists(context_name, project_name)
     set_current_context(context_name)
 
+    # Link conversation to project if project specified
+    if project_name:
+        pm = ProjectManager(HISTORY_DIR)
+        pm.add_conversation(project_name, context_name)
+
     # Get API key
     api_key = decrypt_api_key()
     client = Anthropic(api_key=api_key)
@@ -217,6 +224,7 @@ def main():
         print("Usage:")
         print("  claude-chat \"message\"                    # Use current context")
         print("  claude-chat --context NAME \"message\"      # Use specific context")
+        print("  claude-chat --project NAME \"message\"      # Use project context")
         print("  claude-chat --list                        # List contexts")
         print("  claude-chat --switch CONTEXT              # Switch context")
         sys.exit(1)
@@ -236,8 +244,9 @@ def main():
         print(f"Switched to context: {context_name}")
         sys.exit(0)
 
-    # Handle context flag
+    # Handle context and project flags
     context_name = None
+    project_name = None
     message_index = 1
 
     if sys.argv[1] == "--context":
@@ -247,11 +256,27 @@ def main():
         context_name = sys.argv[2]
         message_index = 3
 
-    # Get message
-    message = sys.argv[message_index]
+    elif sys.argv[1] == "--project":
+        if len(sys.argv) < 4:
+            print("Error: --project requires a name and message")
+            sys.exit(1)
+        project_name = sys.argv[2]
+        message_index = 3
+
+        # Create project if it doesn't exist
+        pm = ProjectManager(HISTORY_DIR)
+        if pm.create_project(project_name, f"Project created via CLI"):
+            print(f"Created new project: {project_name}", file=sys.stderr)
+
+        # Auto-generate context name from project (can be customized later)
+        # For now, use project name as context name
+        context_name = project_name
+
+    # Get message (join all remaining args for multi-word messages)
+    message = ' '.join(sys.argv[message_index:])
 
     # Chat
-    response = chat(message, context_name)
+    response = chat(message, context_name, project_name)
     print(response)
 
 
