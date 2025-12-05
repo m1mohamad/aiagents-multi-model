@@ -1,7 +1,7 @@
 # Makefile for AI Multi-Agent System
 # Simplifies deployment and management
 
-.PHONY: help install deploy config reconfigure deploy-full test clean restart status logs
+.PHONY: help install deploy config reconfigure deploy-full update test clean restart status logs
 
 # Default target
 help:
@@ -11,8 +11,9 @@ help:
 	@echo "  make install       - Install prerequisites (podman, age)"
 	@echo "  make deploy        - Deploy infrastructure (containers, security)"
 	@echo "  make config        - Configure full APIs & conversation history"
+	@echo "  make update        - SAFE: Update code, preserve secrets/data"
 	@echo "  make reconfigure   - Re-apply configuration (if needed)"
-	@echo "  make deploy-full   - Complete setup (deploy + config)"
+	@echo "  make deploy-full   - ⚠️  DESTRUCTIVE: Fresh install (destroys data)"
 	@echo ""
 	@echo "Management:"
 	@echo "  make test          - Verify all components working"
@@ -49,6 +50,11 @@ config:
 # Reconfigure (re-apply configuration)
 reconfigure: config
 	@echo "✓ Configuration reapplied"
+
+# Safe update - preserves secrets and data
+update:
+	@echo "Running safe update (preserves secrets/data)..."
+	@sudo bash scripts/safe-update.sh
 
 # Complete deployment and configuration
 deploy-full: deploy config
