@@ -1,0 +1,95 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ai-agents-multi-model"
+dynamic = ["version"]
+description = "Secure, containerized AI access via terminal"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [
+    { name = "moTsolo" },
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: Implementation :: CPython",
+]
+dependencies = [
+    "anthropic>=0.39.0",
+    "google-generativeai>=0.8.3",
+    "requests>=2.32.0",
+]
+
+[project.scripts]
+claude = "ai_agents.claude_api:main"
+grok = "ai_agents.grok_api:main"
+gemini = "ai_agents.gemini_api:main"
+
+[tool.hatch.version]
+path = "src/ai_agents/__about__.py"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.envs.default]
+installer = "uv"
+dependencies = []
+
+[tool.hatch.envs.default.scripts]
+
+[[tool.hatch.envs.all.matrix]]
+python = ["3.10"]
+
+# Tests
+[tool.hatch.envs.test]
+dependencies = [
+    "pytest>=8.3.4",
+    "pytest-mock>=3.14.0",
+]
+
+[tool.hatch.envs.test.scripts]
+run = "pytest {args:tests}"
+cov = "pytest --cov=ai_agents {args:tests}"
+
+# Linters, formatters, and checkers
+[tool.hatch.envs.lint]
+dependencies = [
+    "ruff==0.9.1",
+]
+
+[tool.hatch.envs.lint.scripts]
+check = "ruff check {args:src}"
+fmt = ["ruff format {args:src}", "ruff check --fix {args:src}"]
+all = ["fmt", "check"]
+
+# Ruff configuration
+[tool.ruff]
+src = ["src/ai_agents"]
+target-version = "py310"
+line-length = 120
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "W",   # pycodestyle warnings
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+]
+ignore = [
+    "E501",  # line too long (handled by formatter)
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["ai_agents"]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests can use assertions and relative imports
+"tests/**/*" = ["S101", "TID252"]
