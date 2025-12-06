@@ -283,6 +283,35 @@ def list_contexts():
         print("No contexts found.")
 
 
+def list_projects_display():
+    """List all projects with statistics"""
+    pm = ProjectManager(HISTORY_DIR)
+    projects = pm.list_projects()
+
+    if not projects:
+        print("No projects found.")
+        return
+
+    print("\nAvailable Projects:")
+    print("-" * 80)
+    print(f"{'Project':<20} {'Convs':>5}  {'Last Activity':<19}  {'Description':<30}")
+    print("-" * 80)
+
+    for project in projects:
+        name = project['name']
+        conv_count = len(project.get('conversations', []))
+        last_activity = project.get('last_activity', 'unknown')[:19]
+        description = project.get('description', '')
+
+        # Truncate description if too long
+        if len(description) > 30:
+            description = description[:27] + "..."
+
+        print(f"{name:<20} {conv_count:>5}  {last_activity:<19}  {description:<30}")
+
+    print("-" * 80)
+
+
 def chat(message, context_name=None, project_name=None, max_history=10):
     """Send message to Claude with conversation history
 
@@ -372,12 +401,17 @@ def main():
         print("  claude-chat --context NAME \"message\"      # Use specific context")
         print("  claude-chat --project NAME \"message\"      # Use project context")
         print("  claude-chat --list                        # List contexts")
+        print("  claude-chat --projects                    # List projects")
         print("  claude-chat --switch CONTEXT              # Switch context")
         sys.exit(1)
 
     # Handle special commands
     if sys.argv[1] == "--list":
         list_contexts()
+        sys.exit(0)
+
+    if sys.argv[1] == "--projects":
+        list_projects_display()
         sys.exit(0)
 
     if sys.argv[1] == "--switch":
