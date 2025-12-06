@@ -2,7 +2,7 @@
 """
 Claude API Implementation using Official Anthropic SDK
 Supports multi-turn conversations and context management
-Phase 4.5: Adds project-level organization
+Phase 4.5: Adds project-level organization and knowledge extraction
 """
 
 import os
@@ -14,6 +14,7 @@ from pathlib import Path
 from anthropic import Anthropic
 
 from ai_agents.core.project_manager import ProjectManager
+from ai_agents.core.knowledge_extractor import KnowledgeExtractor
 
 # Configuration
 CONTEXT_DIR = Path("/ai/claude/context")
@@ -101,8 +102,128 @@ def load_conversation_history(context_name, max_messages=20):
     return messages[-max_messages:]
 
 
-def save_message(context_name, role, content):
-    """Append message to conversation history"""
+def load_project_knowledge(project_name, token_budget=2000):
+    """
+    Load and format project knowledge for context
+
+    Args:
+        project_name: Name of the project
+        token_budget: Approximate token budget for knowledge (chars / 4)
+
+    Returns:
+        Formatted knowledge string or empty string
+    """
+    if not project_name:
+        return ""
+
+    knowledge_file = HISTORY_DIR / project_name / "context" / "knowledge.json"
+
+    if not knowledge_file.exists():
+        return ""
+
+    try:
+        knowledge = json.loads(knowledge_file.read_text())
+    except (json.JSONDecodeError, FileNotFoundError):
+        return ""
+
+    # Format knowledge into readable context
+    context_parts = []
+
+    # Add decisions (highest priority)
+    if knowledge.get('decisions'):
+        decisions = knowledge['decisions'][-5:]  # Last 5 decisions
+        context_parts.append("## Project Decisions:")
+        for dec in decisions:
+            context_parts.append(f"- {dec['decision']}")
+
+    # Add key facts
+    if knowledge.get('facts'):
+        facts = knowledge['facts'][-5:]  # Last 5 facts
+        context_parts.append("\n## Key Facts:")
+        for fact in facts:
+            context_parts.append(f"- {fact['fact']}")
+
+    # Add technologies/patterns
+    if knowledge.get('patterns'):
+        # Get unique technologies
+        techs = set()
+        for p in knowledge['patterns']:
+            if p.get('type') == 'technology':
+                techs.add(p['value'])
+
+        if techs:
+            context_parts.append("\n## Technologies in Use:")
+            context_parts.append(", ".join(sorted(techs)))
+
+    # Combine and check size
+    context = "\n".join(context_parts)
+
+    # Estimate tokens (roughly 1 token = 4 chars)
+    estimated_tokens = len(context) / 4
+
+    if estimated_tokens > token_budget:
+        # Truncate if too large
+        char_limit = token_budget * 4
+        context = context[:int(char_limit)]
+
+    return context
+
+
+def save_knowledge(project_name, conversation_history):
+    """
+    Extract and save knowledge from conversation to project context
+
+    Args:
+        project_name: Name of the project
+        conversation_history: List of conversation messages
+    """
+    if not project_name:
+        return
+
+    # Create project context directory
+    project_context_dir = HISTORY_DIR / project_name / "context"
+    project_context_dir.mkdir(parents=True, exist_ok=True)
+
+    knowledge_file = project_context_dir / "knowledge.json"
+
+    # Extract knowledge
+    extractor = KnowledgeExtractor()
+    knowledge = extractor.extract_all(conversation_history)
+
+    # Load existing knowledge if any
+    existing_knowledge = {}
+    if knowledge_file.exists():
+        try:
+            existing_knowledge = json.loads(knowledge_file.read_text())
+        except json.JSONDecodeError:
+            existing_knowledge = {}
+
+    # Merge new knowledge with existing (append new items)
+    for key in ['decisions', 'facts', 'patterns']:
+        if key in existing_knowledge:
+            # Append new items
+            existing_items = existing_knowledge[key]
+            new_items = knowledge[key]
+            existing_knowledge[key] = existing_items + new_items
+        else:
+            existing_knowledge[key] = knowledge[key]
+
+    existing_knowledge['last_updated'] = knowledge['extracted_at']
+
+    # Save updated knowledge
+    knowledge_file.write_text(json.dumps(existing_knowledge, indent=2))
+
+
+def save_message(context_name, role, content, project_name=None):
+    """
+    Append message to conversation history
+
+    Args:
+        context_name: Name of the conversation context
+        role: Message role (user/assistant)
+        content: Message content
+        project_name: Optional project name for knowledge extraction
+    """
     context_path = HISTORY_DIR / context_name
     conversation_file = context_path / "conversation.jsonl"
     metadata_file = context_path / "metadata.json"
@@ -122,6 +243,12 @@ def save_message(context_name, role, content):
         metadata["last_used"] = datetime.now().isoformat()
         metadata["message_count"] = metadata.get("message_count", 0) + 1
         metadata_file.write_text(json.dumps(metadata, indent=2))
+
+    # Extract knowledge if this is an assistant message in a project
+    if role == "assistant" and project_name:
+        # Load recent conversation history for knowledge extraction
+        history = load_conversation_history(context_name, max_messages=10)
+        save_knowledge(project_name, history)
 
 
 def list_contexts():
@@ -156,6 +283,35 @@ def list_contexts():
         print("No contexts found.")
 
 
+def list_projects_display():
+    """List all projects with statistics"""
+    pm = ProjectManager(HISTORY_DIR)
+    projects = pm.list_projects()
+
+    if not projects:
+        print("No projects found.")
+        return
+
+    print("\nAvailable Projects:")
+    print("-" * 80)
+    print(f"{'Project':<20} {'Convs':>5}  {'Last Activity':<19}  {'Description':<30}")
+    print("-" * 80)
+
+    for project in projects:
+        name = project['name']
+        conv_count = len(project.get('conversations', []))
+        last_activity = project.get('last_activity', 'unknown')[:19]
+        description = project.get('description', '')
+
+        # Truncate description if too long
+        if len(description) > 30:
+            description = description[:27] + "..."
+
+        print(f"{name:<20} {conv_count:>5}  {last_activity:<19}  {description:<30}")
+
+    print("-" * 80)
+
+
 def chat(message, context_name=None, project_name=None, max_history=10):
     """Send message to Claude with conversation history
 
@@ -188,6 +344,24 @@ def chat(message, context_name=None, project_name=None, max_history=10):
 
     # Build messages array for API
     messages = []
+
+    # Load project knowledge if this is a project conversation
+    project_knowledge = load_project_knowledge(project_name) if project_name else ""
+
+    # If we have project knowledge, prepend it as system context
+    if project_knowledge:
+        # Add knowledge as first user message for context
+        messages.append({
+            "role": "user",
+            "content": f"[Project Context]\n{project_knowledge}\n\n---\n\nLet's continue our conversation:"
+        })
+        # Add a brief assistant acknowledgment
+        messages.append({
+            "role": "assistant",
+            "content": "Understood. I have the project context loaded."
+        })
+
+    # Add conversation history
     for msg in history:
         messages.append({"role": msg["role"], "content": msg["content"]})
 
@@ -195,7 +369,7 @@ def chat(message, context_name=None, project_name=None, max_history=10):
     messages.append({"role": "user", "content": message})
 
     # Save user message
-    save_message(context_name, "user", message)
+    save_message(context_name, "user", message, project_name)
 
     # Call Claude API
     try:
@@ -207,8 +381,8 @@ def chat(message, context_name=None, project_name=None, max_history=10):
 
         assistant_message = response.content[0].text
 
-        # Save assistant response
-        save_message(context_name, "assistant", assistant_message)
+        # Save assistant response (triggers knowledge extraction if project)
+        save_message(context_name, "assistant", assistant_message, project_name)
 
         return assistant_message
 
@@ -227,12 +401,17 @@ def main():
         print("  claude-chat --context NAME \"message\"      # Use specific context")
         print("  claude-chat --project NAME \"message\"      # Use project context")
         print("  claude-chat --list                        # List contexts")
+        print("  claude-chat --projects                    # List projects")
         print("  claude-chat --switch CONTEXT              # Switch context")
         sys.exit(1)
 
     # Handle special commands
     if sys.argv[1] == "--list":
         list_contexts()
+        sys.exit(0)
+
+    if sys.argv[1] == "--projects":
+        list_projects_display()
         sys.exit(0)
 
     if sys.argv[1] == "--switch":
