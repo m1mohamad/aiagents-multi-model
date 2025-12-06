@@ -102,6 +102,73 @@ def load_conversation_history(context_name, max_messages=20):
     return messages[-max_messages:]
 
 
+def load_project_knowledge(project_name, token_budget=2000):
+    """
+    Load and format project knowledge for context
+
+    Args:
+        project_name: Name of the project
+        token_budget: Approximate token budget for knowledge (chars / 4)
+
+    Returns:
+        Formatted knowledge string or empty string
+    """
+    if not project_name:
+        return ""
+
+    knowledge_file = HISTORY_DIR / project_name / "context" / "knowledge.json"
+
+    if not knowledge_file.exists():
+        return ""
+
+    try:
+        knowledge = json.loads(knowledge_file.read_text())
+    except (json.JSONDecodeError, FileNotFoundError):
+        return ""
+
+    # Format knowledge into readable context
+    context_parts = []
+
+    # Add decisions (highest priority)
+    if knowledge.get('decisions'):
+        decisions = knowledge['decisions'][-5:]  # Last 5 decisions
+        context_parts.append("## Project Decisions:")
+        for dec in decisions:
+            context_parts.append(f"- {dec['decision']}")
+
+    # Add key facts
+    if knowledge.get('facts'):
+        facts = knowledge['facts'][-5:]  # Last 5 facts
+        context_parts.append("\n## Key Facts:")
+        for fact in facts:
+            context_parts.append(f"- {fact['fact']}")
+
+    # Add technologies/patterns
+    if knowledge.get('patterns'):
+        # Get unique technologies
+        techs = set()
+        for p in knowledge['patterns']:
+            if p.get('type') == 'technology':
+                techs.add(p['value'])
+
+        if techs:
+            context_parts.append("\n## Technologies in Use:")
+            context_parts.append(", ".join(sorted(techs)))
+
+    # Combine and check size
+    context = "\n".join(context_parts)
+
+    # Estimate tokens (roughly 1 token = 4 chars)
+    estimated_tokens = len(context) / 4
+
+    if estimated_tokens > token_budget:
+        # Truncate if too large
+        char_limit = token_budget * 4
+        context = context[:int(char_limit)]
+
+    return context
+
+
 def save_knowledge(project_name, conversation_history):
     """
     Extract and save knowledge from conversation to project context
@@ -248,6 +315,24 @@ def chat(message, context_name=None, project_name=None, max_history=10):
 
     # Build messages array for API
     messages = []
+
+    # Load project knowledge if this is a project conversation
+    project_knowledge = load_project_knowledge(project_name) if project_name else ""
+
+    # If we have project knowledge, prepend it as system context
+    if project_knowledge:
+        # Add knowledge as first user message for context
+        messages.append({
+            "role": "user",
+            "content": f"[Project Context]\n{project_knowledge}\n\n---\n\nLet's continue our conversation:"
+        })
+        # Add a brief assistant acknowledgment
+        messages.append({
+            "role": "assistant",
+            "content": "Understood. I have the project context loaded."
+        })
+
+    # Add conversation history
     for msg in history:
         messages.append({"role": msg["role"], "content": msg["content"]})
 
