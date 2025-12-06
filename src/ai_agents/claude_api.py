@@ -2,7 +2,7 @@
 """
 Claude API Implementation using Official Anthropic SDK
 Supports multi-turn conversations and context management
-Phase 4.5: Adds project-level organization
+Phase 4.5: Adds project-level organization and knowledge extraction
 """
 
 import os
@@ -14,6 +14,7 @@ from pathlib import Path
 from anthropic import Anthropic
 
 from ai_agents.core.project_manager import ProjectManager
+from ai_agents.core.knowledge_extractor import KnowledgeExtractor
 
 # Configuration
 CONTEXT_DIR = Path("/ai/claude/context")
@@ -101,8 +102,61 @@ def load_conversation_history(context_name, max_messages=20):
     return messages[-max_messages:]
 
 
-def save_message(context_name, role, content):
-    """Append message to conversation history"""
+def save_knowledge(project_name, conversation_history):
+    """
+    Extract and save knowledge from conversation to project context
+
+    Args:
+        project_name: Name of the project
+        conversation_history: List of conversation messages
+    """
+    if not project_name:
+        return
+
+    # Create project context directory
+    project_context_dir = HISTORY_DIR / project_name / "context"
+    project_context_dir.mkdir(parents=True, exist_ok=True)
+
+    knowledge_file = project_context_dir / "knowledge.json"
+
+    # Extract knowledge
+    extractor = KnowledgeExtractor()
+    knowledge = extractor.extract_all(conversation_history)
+
+    # Load existing knowledge if any
+    existing_knowledge = {}
+    if knowledge_file.exists():
+        try:
+            existing_knowledge = json.loads(knowledge_file.read_text())
+        except json.JSONDecodeError:
+            existing_knowledge = {}
+
+    # Merge new knowledge with existing (append new items)
+    for key in ['decisions', 'facts', 'patterns']:
+        if key in existing_knowledge:
+            # Append new items
+            existing_items = existing_knowledge[key]
+            new_items = knowledge[key]
+            existing_knowledge[key] = existing_items + new_items
+        else:
+            existing_knowledge[key] = knowledge[key]
+
+    existing_knowledge['last_updated'] = knowledge['extracted_at']
+
+    # Save updated knowledge
+    knowledge_file.write_text(json.dumps(existing_knowledge, indent=2))
+
+
+def save_message(context_name, role, content, project_name=None):
+    """
+    Append message to conversation history
+
+    Args:
+        context_name: Name of the conversation context
+        role: Message role (user/assistant)
+        content: Message content
+        project_name: Optional project name for knowledge extraction
+    """
     context_path = HISTORY_DIR / context_name
     conversation_file = context_path / "conversation.jsonl"
     metadata_file = context_path / "metadata.json"
@@ -122,6 +176,12 @@ def save_message(context_name, role, content):
         metadata["last_used"] = datetime.now().isoformat()
         metadata["message_count"] = metadata.get("message_count", 0) + 1
         metadata_file.write_text(json.dumps(metadata, indent=2))
+
+    # Extract knowledge if this is an assistant message in a project
+    if role == "assistant" and project_name:
+        # Load recent conversation history for knowledge extraction
+        history = load_conversation_history(context_name, max_messages=10)
+        save_knowledge(project_name, history)
 
 
 def list_contexts():
@@ -195,7 +255,7 @@ def chat(message, context_name=None, project_name=None, max_history=10):
     messages.append({"role": "user", "content": message})
 
     # Save user message
-    save_message(context_name, "user", message)
+    save_message(context_name, "user", message, project_name)
 
     # Call Claude API
     try:
@@ -207,8 +267,8 @@ def chat(message, context_name=None, project_name=None, max_history=10):
 
         assistant_message = response.content[0].text
 
-        # Save assistant response
-        save_message(context_name, "assistant", assistant_message)
+        # Save assistant response (triggers knowledge extraction if project)
+        save_message(context_name, "assistant", assistant_message, project_name)
 
         return assistant_message
 
