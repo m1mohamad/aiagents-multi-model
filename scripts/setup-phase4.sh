@@ -137,27 +137,27 @@ echo "[6/6] Creating host-side CLI helpers..."
 mkdir -p /usr/local/bin
 
 # Claude helper
-cat > /usr/local/bin/claude << 'EOFCLAUDEHOST'
+cat > /usr/local/bin/ai-claude << 'EOFCLAUDEHOST'
 #!/bin/bash
 sudo podman exec -i claude-agent /home/agent/claude-chat "$@"
 EOFCLAUDEHOST
 
 # Grok helper
-cat > /usr/local/bin/grok << 'EOFGROKHOST'
+cat > /usr/local/bin/ai-grok << 'EOFGROKHOST'
 #!/bin/bash
 sudo podman exec -i grok-agent /home/agent/grok-chat "$@"
 EOFGROKHOST
 
 # Gemini helper
-cat > /usr/local/bin/gemini << 'EOFGEMINIHOST'
+cat > /usr/local/bin/ai-gemini << 'EOFGEMINIHOST'
 #!/bin/bash
 sudo podman exec -i gemini-agent /home/agent/gemini-chat "$@"
 EOFGEMINIHOST
 
-chmod +x /usr/local/bin/claude /usr/local/bin/grok /usr/local/bin/gemini
-chown $ACTUAL_USER:$ACTUAL_USER /usr/local/bin/claude /usr/local/bin/grok /usr/local/bin/gemini
+chmod +x /usr/local/bin/ai-claude /usr/local/bin/ai-grok /usr/local/bin/ai-gemini
+chown $ACTUAL_USER:$ACTUAL_USER /usr/local/bin/ai-claude /usr/local/bin/ai-grok /usr/local/bin/ai-gemini
 
-echo "  ✓ Host CLI helpers installed (/usr/local/bin/claude, grok, gemini)"
+echo "  ✓ Host CLI helpers installed (/usr/local/bin/ai-claude, ai-grok, ai-gemini)"
 echo ""
 
 # Test installations
@@ -169,12 +169,12 @@ echo ""
 echo "Available Commands:"
 echo ""
 echo "  Host (from anywhere):"
-echo "    claude \"message\"                    # Use default context"
-echo "    claude --context project \"message\"  # Use specific context"
-echo "    claude --list                        # List all contexts"
-echo "    claude --switch project-auth         # Switch active context"
+echo "    ai-claude \"message\"                    # Use default context"
+echo "    ai-claude --context project \"message\"  # Use specific context"
+echo "    ai-claude --list                        # List all contexts"
+echo "    ai-claude --switch project-auth         # Switch active context"
 echo ""
-echo "  Same for: grok and gemini"
+echo "  Same for: ai-grok and ai-gemini"
 echo ""
 echo "  Container (exec into container first):"
 echo "    sudo podman exec -it claude-agent bash"
@@ -222,9 +222,9 @@ fi
 
 echo ""
 echo "Quick Test (if credentials configured):"
-echo "  gemini \"What is 2+2?\""
-echo "  claude --context test \"Explain quantum computing briefly\""
-echo "  grok \"What's trending in AI?\""
+echo "  ai-gemini \"What is 2+2?\""
+echo "  ai-claude --context test \"Explain quantum computing briefly\""
+echo "  ai-grok \"What's trending in AI?\""
 echo ""
 echo "Documentation: docs/phase4-conversations.md"
 echo ""
