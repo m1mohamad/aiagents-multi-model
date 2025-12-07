@@ -32,7 +32,7 @@ make config     # Full APIs & conversation history
 - ✅ Full API implementations with conversation memory
 - ✅ Encrypted credential storage
 - ✅ Multi-turn conversations with context management
-- ✅ Host-side CLI access (`claude`, `grok`, `gemini` commands)
+- ✅ Host-side CLI access (`ai-claude`, `ai-grok`, `ai-gemini` commands)
 - ✅ Secure file system structure
 
 ---
@@ -60,17 +60,17 @@ make config     # Full APIs & conversation history
 ### CLI Usage (After Configuration)
 ```bash
 # Simple commands from host (after running 'make config')
-claude "Explain quantum computing"
-grok "What's trending in AI?"
-gemini "Calculate fibonacci sequence"
+ai-claude "Explain quantum computing"
+ai-grok "What's trending in AI?"
+ai-gemini "Calculate fibonacci sequence"
 
 # Project-specific conversations
-claude --context myproject "Let's design the authentication system"
-claude --context myproject "What about OAuth2 flow?"
+ai-claude --context myproject "Let's design the authentication system"
+ai-claude --context myproject "What about OAuth2 flow?"
 
 # Context management
-claude --list                    # List all conversation contexts
-claude --switch another-project  # Switch active context
+ai-claude --list                    # List all conversation contexts
+ai-claude --switch another-project  # Switch active context
 
 # Container access (basic deployment)
 sudo podman exec gemini-agent /home/agent/gemini-chat "What is Kubernetes?"
@@ -174,20 +174,20 @@ make test
 
 ```bash
 # Simple queries from anywhere on host
-claude "Explain quantum computing"
-grok "What's trending in AI security?"
-gemini "Calculate fibonacci sequence in Python"
+ai-claude "Explain quantum computing"
+ai-grok "What's trending in AI security?"
+ai-gemini "Calculate fibonacci sequence in Python"
 
 # Project-specific conversations (maintains context)
-claude --context oauth-impl "I need to implement OAuth2"
-claude --context oauth-impl "What grant types should I support?"
-claude --context oauth-impl "Show me the authorization code flow"
+ai-claude --context oauth-impl "I need to implement OAuth2"
+ai-claude --context oauth-impl "What grant types should I support?"
+ai-claude --context oauth-impl "Show me the authorization code flow"
 
 # Context management
-claude --list                        # List all contexts
-claude --switch my-other-project     # Switch active context
-grok --list                          # Works for all agents
-gemini --context research "..."      # Or specify inline
+ai-claude --list                        # List all contexts
+ai-claude --switch my-other-project     # Switch active context
+ai-grok --list                          # Works for all agents
+ai-gemini --context research "..."      # Or specify inline
 
 # Management
 make status      # System status
@@ -248,7 +248,7 @@ sudo cat /ai/gemini/workspace/output.txt
 - ✅ **Context Management:** Project-specific conversation isolation
 - ✅ **Security:** All credentials encrypted with age encryption
 - ✅ **Container Isolation:** Proper rootful Podman with network restrictions
-- ✅ **Host CLI:** Simple `claude`, `grok`, `gemini` commands available system-wide
+- ✅ **Host CLI:** Simple `ai-claude`, `ai-grok`, `ai-gemini` commands available system-wide
 - ✅ **Agent Communication:** Basic agent-to-agent messaging
 
 ### Future Enhancements (Planned)
@@ -274,7 +274,7 @@ sudo cat /ai/gemini/workspace/output.txt
 - Gemini Google AI SDK integration
 - Conversation history persistence
 - Multi-turn context management
-- Host-side CLI commands (`claude`, `grok`, `gemini`)
+- Host-side CLI commands (`ai-claude`, `ai-grok`, `ai-gemini`)
 - Agent-to-agent communication bridge
 
 ### 📋 Advanced Features (Future)

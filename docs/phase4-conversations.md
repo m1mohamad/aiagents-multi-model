@@ -52,41 +52,41 @@ sudo bash scripts/setup-phase4.sh
 
 ```bash
 # From host (anywhere on system)
-claude "Explain quantum computing"
-grok "What's trending in AI?"
-gemini "Calculate the meaning of life"
+ai-claude "Explain quantum computing"
+ai-grok "What's trending in AI?"
+ai-gemini "Calculate the meaning of life"
 ```
 
 ### Context Management
 
 ```bash
 # Use specific context (project/topic)
-claude --context project-auth "Review OAuth implementation"
-grok --context research-ai "Latest trends in LLMs"
+ai-claude --context project-auth "Review OAuth implementation"
+ai-grok --context research-ai "Latest trends in LLMs"
 
 # Continue conversation in same context
-claude --context project-auth "What about token refresh?"
+ai-claude --context project-auth "What about token refresh?"
 
 # List all contexts for an agent
-claude --list
+ai-claude --list
 
 # Switch active context
-claude --switch project-api
+ai-claude --switch project-api
 
 # Default context (if not specified)
-claude "Hello"  # Uses 'default' context
+ai-claude "Hello"  # Uses 'default' context
 ```
 
 ### Multi-turn Conversations
 
 ```bash
 # Start a project-specific conversation
-claude --context oauth-implementation "I need to implement OAuth2"
+ai-claude --context oauth-implementation "I need to implement OAuth2"
 
 # Continue in same context (remembers previous messages)
-claude --context oauth-implementation "What grant types should I support?"
+ai-claude --context oauth-implementation "What grant types should I support?"
 
-claude --context oauth-implementation "Show me the token refresh flow"
+ai-claude --context oauth-implementation "Show me the token refresh flow"
 
 # Each context maintains its own conversation history
 ```
@@ -147,31 +147,31 @@ Context information:
 
 ```bash
 # Requirements phase
-claude --context myapp-requirements "I need to build a user authentication system"
-claude --context myapp-requirements "It should support OAuth and JWT"
+ai-claude --context myapp-requirements "I need to build a user authentication system"
+ai-claude --context myapp-requirements "It should support OAuth and JWT"
 
 # Design phase
-claude --context myapp-design "Design the authentication architecture"
-claude --context myapp-design "What database schema do I need?"
+ai-claude --context myapp-design "Design the authentication architecture"
+ai-claude --context myapp-design "What database schema do I need?"
 
 # Implementation phase
-claude --context myapp-impl "Show me the OAuth controller code"
+ai-claude --context myapp-impl "Show me the OAuth controller code"
 
 # Review phase
-grok --context myapp-review "Review this authentication code for security"
+ai-grok --context myapp-review "Review this authentication code for security"
 
 # Testing phase
-gemini --context myapp-tests "Generate test cases for OAuth flow"
+ai-gemini --context myapp-tests "Generate test cases for OAuth flow"
 ```
 
 ### Research Workflow
 
 ```bash
 # Research on AI agents
-claude --context research-ai-agents "What are the latest multi-agent frameworks?"
+ai-claude --context research-ai-agents "What are the latest multi-agent frameworks?"
 
 # Research on LLMs
-grok --context research-llms "What's new in open-source LLMs?"
+ai-grok --context research-llms "What's new in open-source LLMs?"
 
 # Each topic maintains its own conversation history
 ```
@@ -180,13 +180,13 @@ grok --context research-llms "What's new in open-source LLMs?"
 
 ```bash
 # Learning Kubernetes
-claude --context learn-k8s "Explain Kubernetes pods"
-claude --context learn-k8s "Now explain services"
-claude --context learn-k8s "How do they work together?"
+ai-claude --context learn-k8s "Explain Kubernetes pods"
+ai-claude --context learn-k8s "Now explain services"
+ai-claude --context learn-k8s "How do they work together?"
 
 # Learning Rust (separate conversation)
-grok --context learn-rust "Explain Rust ownership"
-grok --context learn-rust "What about borrowing?"
+ai-grok --context learn-rust "Explain Rust ownership"
+ai-grok --context learn-rust "What about borrowing?"
 ```
 
 ---
@@ -268,10 +268,10 @@ sudo chmod 600 /ai/claude/context/.secrets.age
 ### Context not found
 ```bash
 # List available contexts
-claude --list
+ai-claude --list
 
 # Create new context by using it
-claude --context newproject "Hello"
+ai-claude --context newproject "Hello"
 ```
 
 ### History not persisting
