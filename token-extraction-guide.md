@@ -226,8 +226,8 @@ Your SSO token should:
 4. **Copy API Key**
    ```
    Key will be displayed once:
-   AIzaSyDv9aqfheAHIIE1aYJwzBFXnSotkvruWA8
-   
+   YOUR_GEMINI_API_KEY_HERE
+
    Format: AIza... (starts with AIza)
    Length: ~40 characters
    ```

@@ -24,6 +24,7 @@ make deploy-full
 # Or step by step:
 make install    # Prerequisites
 make deploy     # Infrastructure (containers, security)
+make secrets    # Interactive key setup
 make config     # Full APIs & conversation history
 ```
 
@@ -108,7 +109,9 @@ make install
 
 ```bash
 make install      # Install prerequisites
-make deploy-full  # Deploy everything (infrastructure + configuration)
+make deploy       # Deploy infrastructure
+make secrets      # Configure API keys interactively
+make config       # Configure full APIs & conversation history
 make status       # Check status
 make contexts     # Show conversation contexts
 make test         # Test agents
@@ -128,38 +131,26 @@ sudo bash scripts/setup-phase4.sh
 
 ## Configuration
 
-### 1. Get API Keys/Tokens
+### Configure API Keys
 
-After deployment, get credentials:
+After deployment, configure your API keys:
 
-- **Claude:** https://console.anthropic.com/settings/keys → Create API key
-- **Grok:** https://x.ai → F12 → Cookies → `sso` token
-- **Gemini:** https://aistudio.google.com/app/apikey → Create API key
+```bash
+make secrets
+```
 
-**Full guides:**
+The script will prompt for each API key. Get keys from:
+- **Claude**: https://console.anthropic.com/settings/keys (API Keys)
+- **Grok**: https://console.x.ai (API Keys)
+- **Gemini**: https://aistudio.google.com/app/apikey (API Key)
+
+All keys are encrypted with age before storage.
+
+**Detailed guides:**
 - Claude: [docs/claude-api-key-setup.md](docs/claude-api-key-setup.md)
 - Grok/Gemini: [docs/token-extraction-guide.md](docs/token-extraction-guide.md)
 
-### 2. Encrypt Credentials
-
-```bash
-# Claude (API key)
-echo "sk-ant-api03-YOUR_API_KEY" | age -r $(grep "public key:" ~/.age-key.txt | awk '{print $NF}') \
-  -o /ai/claude/context/.secrets.age
-
-# Grok (SSO token)
-echo "YOUR_SSO_TOKEN" | age -r $(grep "public key:" ~/.age-key.txt | awk '{print $NF}') \
-  -o /ai/grok/context/.secrets.age
-
-# Gemini (API key)
-echo "YOUR_GEMINI_API_KEY" | age -r $(grep "public key:" ~/.age-key.txt | awk '{print $NF}') \
-  -o /ai/gemini/context/.secrets.age
-
-# Fix permissions
-sudo chmod 600 /ai/*/context/.secrets.age
-```
-
-### 3. Verify
+### Verify
 
 ```bash
 make test

@@ -6,6 +6,11 @@
 *.secrets.age
 .secrets.age
 
+# API keys in any form
+*_key.txt
+*_token.txt
+*.env
+
 # Logs
 /ai/logs/*
 
