@@ -1,7 +1,7 @@
 # Makefile for AI Multi-Agent System
 # Simplifies deployment and management
 
-.PHONY: help install deploy config reconfigure deploy-full update test clean restart status logs
+.PHONY: help install deploy secrets config reconfigure deploy-full update test clean restart status logs
 
 # Default target
 help:
@@ -10,6 +10,7 @@ help:
 	@echo "Deployment:"
 	@echo "  make install       - Install prerequisites (podman, age)"
 	@echo "  make deploy        - Deploy infrastructure (containers, security)"
+	@echo "  make secrets       - Configure API keys interactively"
 	@echo "  make config        - Configure full APIs & conversation history"
 	@echo "  make update        - SAFE: Update code, preserve secrets/data"
 	@echo "  make reconfigure   - Re-apply configuration (if needed)"
@@ -41,6 +42,11 @@ install:
 deploy:
 	@echo "Deploying infrastructure..."
 	@sudo bash deploy.sh
+
+# Configure API keys interactively
+secrets:
+	@echo "Configuring API keys..."
+	@sudo bash scripts/configure-secrets.sh
 
 # Configure full APIs and conversation history
 config:
