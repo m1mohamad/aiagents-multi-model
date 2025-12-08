@@ -94,6 +94,19 @@ for script in claude-api.py grok-api.py gemini-api.py; do
     fi
 done
 
+# Copy project_manager.py dependency
+echo ""
+echo "  Installing project_manager.py..."
+if [ -f "$SCRIPT_DIR/../src/ai_agents/core/project_manager.py" ]; then
+    for agent in claude grok gemini; do
+        podman cp "$SCRIPT_DIR/../src/ai_agents/core/project_manager.py" ${agent}-agent:/home/agent/project_manager.py
+        podman exec -u root ${agent}-agent chown $USER_UID:$USER_GID /home/agent/project_manager.py
+    done
+    echo "  ✓ project_manager.py installed in all agents"
+else
+    echo "  ✗ Warning: project_manager.py not found at $SCRIPT_DIR/../src/ai_agents/core/project_manager.py"
+fi
+
 echo ""
 
 # Step 5: Create new CLI wrapper scripts
