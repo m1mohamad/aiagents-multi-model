@@ -229,7 +229,7 @@ def chat(message, context_name=None, project_name=None, max_history=10):
 
     # Call Gemini API
     try:
-        model = genai.GenerativeModel('gemini-2.0-flash-exp')
+        model = genai.GenerativeModel('gemini-1.5-flash')
 
         # Start chat with history
         chat_session = model.start_chat(history=gemini_history)
