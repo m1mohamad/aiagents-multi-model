@@ -2,12 +2,15 @@
 set -e
 
 ACTUAL_USER=${SUDO_USER:-$USER}
-PUBLIC_KEY=$(sudo -u $ACTUAL_USER grep "public key:" ~$ACTUAL_USER/.age-key.txt 2>/dev/null | awk '{print $NF}')
+AGE_KEY_PATH="/home/$ACTUAL_USER/.age-key.txt"
 
-if [ -z "$PUBLIC_KEY" ]; then
-    echo "Error: Age key not found. Run 'make deploy' first."
+if [ ! -f "$AGE_KEY_PATH" ]; then
+    echo "Error: Age key not found at $AGE_KEY_PATH"
+    echo "Run 'make deploy' to generate it."
     exit 1
 fi
+
+PUBLIC_KEY=$(grep "public key:" "$AGE_KEY_PATH" | awk '{print $NF}')
 
 echo "=========================================="
 echo "AI Agent Secrets Configuration"
