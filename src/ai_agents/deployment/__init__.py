@@ -6,6 +6,8 @@ Follows Single Responsibility Principle and security-first approach.
 """
 
 from .state import DeploymentState, StateDetector
+from .secrets import SecretValidator, SecretsManager
+from .backup import BackupManager
 from .exceptions import (
     DeploymentError,
     StateError,
@@ -17,6 +19,9 @@ from .exceptions import (
 __all__ = [
     "DeploymentState",
     "StateDetector",
+    "SecretValidator",
+    "SecretsManager",
+    "BackupManager",
     "DeploymentError",
     "StateError",
     "SecurityError",
