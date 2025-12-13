@@ -8,6 +8,7 @@ Follows Single Responsibility Principle and security-first approach.
 from .state import DeploymentState, StateDetector
 from .secrets import SecretValidator, SecretsManager
 from .backup import BackupManager
+from .containers import ContainerManager, ContainerInfo
 from .exceptions import (
     DeploymentError,
     StateError,
@@ -22,6 +23,8 @@ __all__ = [
     "SecretValidator",
     "SecretsManager",
     "BackupManager",
+    "ContainerManager",
+    "ContainerInfo",
     "DeploymentError",
     "StateError",
     "SecurityError",
