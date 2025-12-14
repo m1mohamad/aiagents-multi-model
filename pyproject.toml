@@ -32,6 +32,9 @@ gemini = "ai_agents.gemini_api:main"
 [tool.hatch.version]
 path = "src/ai_agents/__about__.py"
 
+[tool.hatch.build.targets.wheel]
+packages = ["src/ai_agents"]
+
 [tool.hatch.metadata]
 allow-direct-references = true
 
