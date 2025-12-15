@@ -69,13 +69,17 @@ echo ""
 echo "[3/5] Updating container code..."
 
 # Copy project_manager.py to all containers
-for agent in claude grok gemini; do
-    if podman container exists ${agent}-agent 2>/dev/null; then
-        podman cp scripts/project_manager.py ${agent}-agent:/home/agent/
-        podman exec -u root ${agent}-agent chown 1002:1002 /home/agent/project_manager.py
-        echo "  ✓ Updated ${agent}-agent"
-    fi
-done
+if [ -f "src/ai_agents/core/project_manager.py" ]; then
+    for agent in claude grok gemini; do
+        if podman container exists ${agent}-agent 2>/dev/null; then
+            podman cp src/ai_agents/core/project_manager.py ${agent}-agent:/home/agent/
+            podman exec -u root ${agent}-agent chown 1002:1002 /home/agent/project_manager.py
+            echo "  ✓ Updated ${agent}-agent"
+        fi
+    done
+else
+    echo "  ⚠️  project_manager.py not found, skipping update"
+fi
 
 # Restart containers to pick up changes
 echo ""
