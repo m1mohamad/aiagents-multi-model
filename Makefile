@@ -125,9 +125,9 @@ contexts:
 
 # Show container logs
 logs:
-	@echo "Select container: [claude|grok|gemini]"
+	@echo "Enter container name (claude-agent, grok-agent, or gemini-agent):"
 	@read -p "Container: " container; \
-	sudo podman logs $${container}-agent
+	sudo podman logs $$container
 
 # Restart all containers
 restart:
