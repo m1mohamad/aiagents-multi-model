@@ -289,7 +289,7 @@ py-list-backups:
 # Run Python deployment tests
 py-test:
 	@echo "Running Python deployment module tests..."
-	@python -m pytest tests/deployment/ -v
+	@python3 -m pytest tests/deployment/ -v
 
 # Show Python CLI help
 py-help:

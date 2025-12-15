@@ -32,11 +32,12 @@ SECRET_COUNT=0
 for agent in claude grok gemini; do
     if [ -f "/ai/$agent/context/.secrets.age" ]; then
         echo "  ✓ $agent secrets found"
-        ((SECRET_COUNT++))
+        ((SECRET_COUNT++)) || true  # Don't exit if arithmetic fails
     else
         echo "  ⚠️  $agent secrets MISSING"
     fi
 done
+echo "Found $SECRET_COUNT secret(s)"
 
 if [ $SECRET_COUNT -eq 0 ]; then
     echo ""
