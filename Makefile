@@ -16,7 +16,7 @@ help:
 	@echo "  make reconfigure   - Re-apply configuration (if needed)"
 	@echo "  make deploy-full   - ⚠️  DESTRUCTIVE: Fresh install (destroys data)"
 	@echo ""
-	@echo "Management:"
+	@echo "Management (Bash):"
 	@echo "  make test          - Verify all components working"
 	@echo "  make status        - Show system status"
 	@echo "  make contexts      - Show conversation contexts"
@@ -24,6 +24,13 @@ help:
 	@echo "  make stop          - Stop all containers"
 	@echo "  make start         - Start all containers"
 	@echo "  make logs          - Show container logs"
+	@echo ""
+	@echo "Management (Python):"
+	@echo "  make py-status     - Deployment status (Python modules)"
+	@echo "  make py-containers - Container status (Python modules)"
+	@echo "  make py-backup     - Create backup (Python modules)"
+	@echo "  make py-restart    - Restart containers (Python)"
+	@echo "  make py-help       - Show all Python commands"
 	@echo ""
 	@echo "Cleanup:"
 	@echo "  make clean         - Remove containers and pod"
@@ -198,3 +205,80 @@ package:
 	@echo "Creating deployment package..."
 	@bash package-for-vm.sh
 	@echo "✓ Package ready in /tmp/"
+
+# ============================================
+# Python Deployment Module Commands
+# ============================================
+
+# Show detailed status using Python modules
+py-status:
+	@echo "Running Python deployment status check..."
+	@sudo python3 scripts/deploy-cli.py status
+
+# Show container status using Python modules
+py-containers:
+	@echo "Checking container status via Python..."
+	@sudo python3 scripts/deploy-cli.py container-status
+
+# Verify secrets using Python modules
+py-verify-secrets:
+	@echo "Verifying secrets configuration..."
+	@sudo python3 scripts/deploy-cli.py verify-secrets
+
+# Restart containers using Python modules
+py-restart:
+	@echo "Restarting containers via Python..."
+	@sudo python3 scripts/deploy-cli.py restart
+
+# Stop containers using Python modules
+py-stop:
+	@echo "Stopping containers via Python..."
+	@sudo python3 scripts/deploy-cli.py stop
+
+# Start containers using Python modules
+py-start:
+	@echo "Starting containers via Python..."
+	@sudo python3 scripts/deploy-cli.py start
+
+# Create backup using Python modules
+py-backup:
+	@echo "Creating backup via Python..."
+	@sudo python3 scripts/deploy-cli.py backup
+
+# Create backup without secrets
+py-backup-nosecrets:
+	@echo "Creating backup (excluding secrets)..."
+	@sudo python3 scripts/deploy-cli.py backup --no-secrets
+
+# List backups using Python modules
+py-list-backups:
+	@echo "Listing backups..."
+	@sudo python3 scripts/deploy-cli.py list-backups
+
+# Run Python deployment tests
+py-test:
+	@echo "Running Python deployment module tests..."
+	@python -m pytest tests/deployment/ -v
+
+# Show Python CLI help
+py-help:
+	@echo "Python Deployment Module Commands:"
+	@echo ""
+	@echo "Status & Verification:"
+	@echo "  make py-status           - Show deployment status (Python)"
+	@echo "  make py-containers       - Show container status (Python)"
+	@echo "  make py-verify-secrets   - Verify secrets configuration"
+	@echo "  make py-test             - Run deployment module tests"
+	@echo ""
+	@echo "Container Management:"
+	@echo "  make py-restart          - Restart all containers (Python)"
+	@echo "  make py-stop             - Stop all containers (Python)"
+	@echo "  make py-start            - Start all containers (Python)"
+	@echo ""
+	@echo "Backup Management:"
+	@echo "  make py-backup           - Create backup (Python)"
+	@echo "  make py-backup-nosecrets - Create backup without secrets"
+	@echo "  make py-list-backups     - List available backups"
+	@echo ""
+	@echo "Direct CLI:"
+	@echo "  sudo python3 scripts/deploy-cli.py <command>"
