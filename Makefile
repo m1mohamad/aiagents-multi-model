@@ -19,6 +19,7 @@ help:
 	@echo "Management (Bash):"
 	@echo "  make test          - Verify all components working"
 	@echo "  make status        - Show system status"
+	@echo "  make diagnose      - Run system diagnostics"
 	@echo "  make contexts      - Show conversation contexts"
 	@echo "  make restart       - Restart all containers"
 	@echo "  make stop          - Stop all containers"
@@ -127,7 +128,37 @@ contexts:
 logs:
 	@echo "Enter container name (claude-agent, grok-agent, or gemini-agent):"
 	@read -p "Container: " container; \
-	sudo podman logs $$container
+	echo "Fetching logs for $$container..."; \
+	sudo podman logs $$container 2>&1 || echo "Error: Failed to get logs for $$container"
+
+# Diagnostic check
+diagnose:
+	@echo "=== System Diagnostics ==="
+	@echo ""
+	@echo "1. Checking /ai directory..."
+	@sudo ls -lah /ai 2>/dev/null || echo "✗ /ai directory not found"
+	@echo ""
+	@echo "2. Checking /ai contents..."
+	@sudo du -sh /ai/* 2>/dev/null || echo "✗ No contents in /ai"
+	@echo ""
+	@echo "3. Checking containers..."
+	@sudo podman ps --filter pod=ai-agents --format "{{.Names}}: {{.Status}}"
+	@echo ""
+	@echo "4. Checking age key..."
+	@test -f ~/.age-key.txt && echo "✓ Age key exists" || echo "✗ Age key missing"
+	@test -f ~/.age-key.txt && stat -c "Permissions: %a" ~/.age-key.txt
+	@echo ""
+	@echo "5. Checking secrets..."
+	@for agent in claude grok gemini; do \
+		if [ -f "/ai/$$agent/context/.secrets.age" ]; then \
+			echo "✓ $$agent secrets exist"; \
+		else \
+			echo "✗ $$agent secrets missing"; \
+		fi; \
+	done
+	@echo ""
+	@echo "6. Checking backup directory..."
+	@ls -lh ~/ai-backups/*.age 2>/dev/null || echo "No backups found in ~/ai-backups"
 
 # Restart all containers
 restart:
@@ -258,7 +289,7 @@ py-list-backups:
 # Run Python deployment tests
 py-test:
 	@echo "Running Python deployment module tests..."
-	@python -m pytest tests/deployment/ -v
+	@python3 -m pytest tests/deployment/ -v
 
 # Show Python CLI help
 py-help:

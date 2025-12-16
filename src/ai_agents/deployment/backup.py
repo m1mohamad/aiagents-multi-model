@@ -74,6 +74,13 @@ class SecureBackupManager:
         if not self.ai_dir.exists():
             raise BackupError(f"AI directory not found: {self.ai_dir}")
 
+        # Check if /ai has any content
+        ai_contents = list(self.ai_dir.iterdir())
+        if not ai_contents:
+            logger.warning(f"/ai directory is empty - backup will be minimal")
+        else:
+            logger.info(f"Backing up {len(ai_contents)} items from /ai")
+
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
         backup_filename = f"ai-backup-{timestamp}.tar.gz.age"
         backup_path = self.backup_dir / backup_filename
@@ -113,14 +120,21 @@ class SecureBackupManager:
 
             # Wait for both processes
             age_stdout, age_stderr = age_process.communicate()
+            tar_process.wait()  # Ensure tar finishes
             tar_stderr = tar_process.stderr.read() if tar_process.stderr else b""
+
+            # Log any warnings from tar/age
+            if tar_stderr:
+                logger.debug(f"Tar stderr: {tar_stderr.decode()}")
+            if age_stderr:
+                logger.debug(f"Age stderr: {age_stderr.decode()}")
 
             # Check for errors
             if tar_process.returncode != 0:
-                raise BackupError(f"Tar failed: {tar_stderr.decode()}")
+                raise BackupError(f"Tar failed (exit {tar_process.returncode}): {tar_stderr.decode()}")
 
             if age_process.returncode != 0:
-                raise BackupError(f"Encryption failed: {age_stderr.decode()}")
+                raise BackupError(f"Encryption failed (exit {age_process.returncode}): {age_stderr.decode()}")
 
             # Set secure permissions (600)
             backup_path.chmod(0o600)
@@ -145,7 +159,12 @@ class SecureBackupManager:
 
             # Get backup size for user
             size_mb = backup_path.stat().st_size / (1024 * 1024)
-            logger.info(f"Backup size: {size_mb:.2f} MB")
+            size_kb = backup_path.stat().st_size / 1024
+
+            if size_mb < 0.1:
+                logger.warning(f"⚠️ Backup size is very small: {size_kb:.2f} KB - may be empty!")
+            else:
+                logger.info(f"✓ Backup size: {size_mb:.2f} MB")
 
             return backup_path
 
