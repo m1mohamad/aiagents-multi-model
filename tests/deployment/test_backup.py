@@ -2,7 +2,7 @@
 import pytest
 import json
 from pathlib import Path
-from ai_agents.deployment.backup import BackupManager, BackupError
+from ai_agents.deployment.backup_legacy import BackupManager, BackupError
 
 
 class TestBackupManager:
