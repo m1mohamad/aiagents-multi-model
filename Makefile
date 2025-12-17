@@ -29,7 +29,7 @@ help:
 	@echo "Management (Python):"
 	@echo "  make py-status     - Deployment status (Python modules)"
 	@echo "  make py-containers - Container status (Python modules)"
-	@echo "  make py-backup     - Create backup (Python modules)"
+	@echo "  make py-backup     - Create encrypted backup (Python, .tar.gz.age)"
 	@echo "  make py-restart    - Restart containers (Python)"
 	@echo "  make py-help       - Show all Python commands"
 	@echo ""
@@ -271,25 +271,20 @@ py-start:
 	@echo "Starting containers via Python..."
 	@sudo python3 scripts/deploy-cli.py start
 
-# Create backup using Python modules
+# Create encrypted backup using Python modules
 py-backup:
-	@echo "Creating backup via Python..."
+	@echo "Creating encrypted backup via Python..."
 	@sudo python3 scripts/deploy-cli.py backup
 
-# Create backup without secrets
-py-backup-nosecrets:
-	@echo "Creating backup (excluding secrets)..."
-	@sudo python3 scripts/deploy-cli.py backup --no-secrets
-
-# List backups using Python modules
+# List encrypted backups using Python modules
 py-list-backups:
-	@echo "Listing backups..."
+	@echo "Listing encrypted backups..."
 	@sudo python3 scripts/deploy-cli.py list-backups
 
-# Run Python deployment tests
+# Run Python deployment tests (uses hatch)
 py-test:
 	@echo "Running Python deployment module tests..."
-	@python3 -m pytest tests/deployment/ -v
+	@hatch run test:run tests/deployment/ -v
 
 # Show Python CLI help
 py-help:
@@ -307,9 +302,8 @@ py-help:
 	@echo "  make py-start            - Start all containers (Python)"
 	@echo ""
 	@echo "Backup Management:"
-	@echo "  make py-backup           - Create backup (Python)"
-	@echo "  make py-backup-nosecrets - Create backup without secrets"
-	@echo "  make py-list-backups     - List available backups"
+	@echo "  make py-backup           - Create encrypted backup (Python, .tar.gz.age)"
+	@echo "  make py-list-backups     - List available encrypted backups"
 	@echo ""
 	@echo "Direct CLI:"
 	@echo "  sudo python3 scripts/deploy-cli.py <command>"
