@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 from ai_agents.deployment import (
     StateDetector,
     ContainerManager,
-    BackupManager,
+    SecureBackupManager,
     SecretsManager,
 )
 
@@ -125,15 +125,17 @@ def cmd_start_containers():
 
 
 def cmd_backup(args):
-    """Create backup using Python modules."""
-    mgr = BackupManager()
+    """Create encrypted backup using Python modules."""
+    mgr = SecureBackupManager()
 
-    print("=== Creating Backup (Python) ===")
+    print("=== Creating Encrypted Backup (Python) ===")
     print()
 
     try:
-        backup_path = mgr.create_backup(include_secrets=args.include_secrets)
-        print(f"✓ Backup created: {backup_path}")
+        backup_path = mgr.create_backup(validate=True)
+        print(f"✓ Encrypted backup created: {backup_path}")
+        print(f"  Format: .tar.gz.age (encrypted with age)")
+        print(f"  Location: {backup_path.parent}")
         return 0
     except Exception as e:
         print(f"✗ Backup failed: {e}")
@@ -141,27 +143,27 @@ def cmd_backup(args):
 
 
 def cmd_list_backups():
-    """List backups using Python modules."""
-    mgr = BackupManager()
+    """List encrypted backups using Python modules."""
+    mgr = SecureBackupManager()
 
-    print("=== Available Backups (Python) ===")
+    print("=== Available Encrypted Backups (Python) ===")
     print()
 
     backups = mgr.list_backups()
     if not backups:
-        print("No backups found")
+        print("No backups found in ~/ai-backups/")
+        print("Create one with: make py-backup")
         return 0
 
     for backup in backups:
-        info = mgr.get_backup_info(backup)
-        if info.get("has_metadata"):
-            timestamp = info.get("timestamp", "unknown")
-            secrets = info.get("include_secrets", False)
-            print(f"  {backup.name}")
-            print(f"    Timestamp: {timestamp}")
-            print(f"    Includes secrets: {'Yes' if secrets else 'No'}")
-        else:
-            print(f"  {backup.name} (no metadata)")
+        latest_mark = " [LATEST]" if backup["is_latest"] else ""
+        print(f"  {backup['name']}{latest_mark}")
+        print(f"    Created: {backup['created']}")
+        print(f"    Size: {backup['size_mb']:.2f} MB")
+        print(f"    Encrypted: ✓ (age)")
+        print()
+
+    print(f"Total backups: {len(backups)}")
     print()
 
 
@@ -215,11 +217,8 @@ def main():
     subparsers.add_parser("start", help="Start all containers")
 
     # Backup management
-    backup_parser = subparsers.add_parser("backup", help="Create backup")
-    backup_parser.add_argument(
-        "--no-secrets", dest="include_secrets", action="store_false", help="Exclude secrets from backup"
-    )
-    subparsers.add_parser("list-backups", help="List available backups")
+    subparsers.add_parser("backup", help="Create encrypted backup (always includes secrets)")
+    subparsers.add_parser("list-backups", help="List available encrypted backups")
 
     args = parser.parse_args()
 
