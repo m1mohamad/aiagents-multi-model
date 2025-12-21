@@ -1,6 +1,6 @@
 #!/bin/bash
 # Phase 2: AI Model Containers Setup
-# Builds and deploys Claude, Grok, and Gemini containers
+# Builds and deploys Claude, Grok, Gemini, Groq, and HuggingFace containers
 # Usage: sudo bash setup-phase2.sh
 
 set -xe
@@ -76,6 +76,28 @@ USER agent
 WORKDIR /home/agent
 EOF
 
+# Dockerfile for Groq (FREE - ultra-fast Llama 3.3)
+cat > "$BUILD_DIR/Dockerfile.groq" << 'EOF'
+FROM localhost/ai-base:secure
+
+USER root
+RUN pip3 install requests python-dotenv --no-cache-dir
+
+USER agent
+WORKDIR /home/agent
+EOF
+
+# Dockerfile for HuggingFace (FREE - Llama 3.1)
+cat > "$BUILD_DIR/Dockerfile.huggingface" << 'EOF'
+FROM localhost/ai-base:secure
+
+USER root
+RUN pip3 install requests python-dotenv --no-cache-dir
+
+USER agent
+WORKDIR /home/agent
+EOF
+
 echo "✓ Dockerfiles created"
 echo ""
 
@@ -90,6 +112,12 @@ podman build -t ai-grok:latest -f "$BUILD_DIR/Dockerfile.grok" "$BUILD_DIR"
 echo ""
 echo "Building ai-gemini:latest..."
 podman build -t ai-gemini:latest -f "$BUILD_DIR/Dockerfile.gemini" "$BUILD_DIR"
+echo ""
+echo "Building ai-groq:latest (FREE)..."
+podman build -t ai-groq:latest -f "$BUILD_DIR/Dockerfile.groq" "$BUILD_DIR"
+echo ""
+echo "Building ai-huggingface:latest (FREE)..."
+podman build -t ai-huggingface:latest -f "$BUILD_DIR/Dockerfile.huggingface" "$BUILD_DIR"
 echo ""
 echo "✓ All images built"
 echo ""
@@ -128,6 +156,24 @@ podman run -d --pod ai-agents --name gemini-agent \
   -v /ai/logs:/ai/logs:rw \
   ai-gemini:latest sleep infinity
 echo "  ✓ gemini-agent launched"
+
+# Launch Groq container (FREE)
+podman run -d --pod ai-agents --name groq-agent \
+  --user $USER_UID:$USER_GID \
+  -v /ai/groq:/ai/groq:rw \
+  -v /ai/shared:/ai/shared:ro \
+  -v /ai/logs:/ai/logs:rw \
+  ai-groq:latest sleep infinity
+echo "  ✓ groq-agent launched (FREE)"
+
+# Launch HuggingFace container (FREE)
+podman run -d --pod ai-agents --name huggingface-agent \
+  --user $USER_UID:$USER_GID \
+  -v /ai/huggingface:/ai/huggingface:rw \
+  -v /ai/shared:/ai/shared:ro \
+  -v /ai/logs:/ai/logs:rw \
+  ai-huggingface:latest sleep infinity
+echo "  ✓ huggingface-agent launched (FREE)"
 echo ""
 
 # Step 6: Verify containers
@@ -151,6 +197,18 @@ if podman exec gemini-agent python3 -c "import google.generativeai" 2>/dev/null;
 else
     echo "  ✗ Gemini SDK verification failed"
 fi
+
+if podman exec groq-agent python3 -c "import requests" 2>/dev/null; then
+    echo "  ✓ Groq tools installed (FREE)"
+else
+    echo "  ✗ Groq tools verification failed"
+fi
+
+if podman exec huggingface-agent python3 -c "import requests" 2>/dev/null; then
+    echo "  ✓ HuggingFace tools installed (FREE)"
+else
+    echo "  ✗ HuggingFace tools verification failed"
+fi
 echo ""
 
 # Step 7: Verify file access
@@ -172,6 +230,18 @@ if podman exec gemini-agent bash -c "echo 'gemini-test' > /ai/logs/gemini-test.l
 else
     echo "  ✗ Gemini file access failed"
 fi
+
+if podman exec groq-agent bash -c "echo 'groq-test' > /ai/logs/groq-test.log" 2>/dev/null; then
+    echo "  ✓ Groq can write to logs"
+else
+    echo "  ✗ Groq file access failed"
+fi
+
+if podman exec huggingface-agent bash -c "echo 'hf-test' > /ai/logs/hf-test.log" 2>/dev/null; then
+    echo "  ✓ HuggingFace can write to logs"
+else
+    echo "  ✗ HuggingFace file access failed"
+fi
 echo ""
 
 echo "=========================================="
@@ -187,13 +257,17 @@ echo ""
 echo "Next Steps:"
 echo "1. Test container access:"
 echo "   sudo podman exec -it claude-agent /bin/bash"
+echo "   sudo podman exec -it groq-agent /bin/bash"
+echo "   sudo podman exec -it huggingface-agent /bin/bash"
 echo "   sudo podman exec -it grok-agent /bin/bash"
 echo "   sudo podman exec -it gemini-agent /bin/bash"
 echo ""
 echo "2. Proceed to Phase 3: Authentication & Configuration"
 echo ""
 echo "Quick Test Commands:"
-echo "  Claude:  sudo podman exec claude-agent python3 -c 'import anthropic; print(\"Ready\")'"
-echo "  Grok:    sudo podman exec grok-agent python3 -c 'import requests; print(\"Ready\")'"
-echo "  Gemini:  sudo podman exec gemini-agent python3 -c 'import google.generativeai; print(\"Ready\")'"
+echo "  Claude:       sudo podman exec claude-agent python3 -c 'import anthropic; print(\"Ready\")'"
+echo "  Groq (FREE):  sudo podman exec groq-agent python3 -c 'import requests; print(\"Ready\")'"
+echo "  HF (FREE):    sudo podman exec huggingface-agent python3 -c 'import requests; print(\"Ready\")'"
+echo "  Grok:         sudo podman exec grok-agent python3 -c 'import requests; print(\"Ready\")'"
+echo "  Gemini:       sudo podman exec gemini-agent python3 -c 'import google.generativeai; print(\"Ready\")'"
 echo ""
