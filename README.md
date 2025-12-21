@@ -1,7 +1,7 @@
 # AI Multi-Agent System
 ## Secure, Containerized AI Access via Terminal
 
-**Deploy Claude, Grok, and Gemini in isolated containers with encrypted credentials and CLI access.**
+**Deploy Claude, Groq, HuggingFace, Gemini, and Grok in isolated containers with encrypted credentials and CLI access.**
 
 [![Status](https://img.shields.io/badge/Status-Production%20Ready-green)]()
 [![Tested](https://img.shields.io/badge/Tested-Ubuntu%2022.04-blue)]()
@@ -29,26 +29,35 @@ make config     # Full APIs & conversation history
 ```
 
 **That's it!** In 5-10 minutes you'll have:
-- ✅ 3 AI agents in isolated containers
+- ✅ 5 AI agents in isolated containers (Claude, Groq, HuggingFace, Gemini, Grok)
 - ✅ Full API implementations with conversation memory
 - ✅ Encrypted credential storage
 - ✅ Multi-turn conversations with context management
-- ✅ Host-side CLI access (`ai-claude`, `ai-grok`, `ai-gemini` commands)
+- ✅ Host-side CLI access (`ai-claude`, `ai-groq`, `ai-hf`, `ai-gemini`, `ai-grok`)
 - ✅ Secure file system structure
+- ✅ **2 FREE agents** (Groq ultra-fast Llama 3.3, HuggingFace Llama 3.1)
 
 ---
 
 ## What You Get
 
-### Three AI Agents
+### Five AI Agents
 ```
-┌─────────────────┬──────────────────┬────────────────────┐
-│  claude-agent   │   grok-agent     │   gemini-agent     │
-├─────────────────┼──────────────────┼────────────────────┤
-│ Anthropic       │ xAI Grok         │ Google Gemini      │
-│ Claude Sonnet   │ Fast responses   │ 2.5 Flash (free)   │
-│ Best reasoning  │ Conversational   │ Fully working API  │
-└─────────────────┴──────────────────┴────────────────────┘
+┌─────────────────┬──────────────────┬─────────────────┐
+│  claude-agent   │   groq-agent     │   hf-agent      │
+├─────────────────┼──────────────────┼─────────────────┤
+│ Anthropic       │ Groq Llama 3.3   │ HuggingFace     │
+│ Claude Sonnet   │ 70B (FREE)       │ Llama 3.1 70B   │
+│ Best reasoning  │ Ultra-fast       │ (FREE)          │
+└─────────────────┴──────────────────┴─────────────────┘
+
+┌─────────────────┬──────────────────┐
+│  gemini-agent   │   grok-agent     │
+├─────────────────┼──────────────────┤
+│ Google Gemini   │ xAI Grok         │
+│ 1.5 Flash       │ Conversational   │
+│ Free tier       │ Paid API         │
+└─────────────────┴──────────────────┘
 ```
 
 ### Security Features
@@ -61,20 +70,24 @@ make config     # Full APIs & conversation history
 ### CLI Usage (After Configuration)
 ```bash
 # Simple commands from host (after running 'make config')
-ai-claude "Explain quantum computing"
-ai-grok "What's trending in AI?"
-ai-gemini "Calculate fibonacci sequence"
+ai-claude "Explain quantum computing"         # Best reasoning
+ai-groq "What's trending in AI?"              # FREE - ultra-fast Llama 3.3 70B
+ai-hf "Calculate fibonacci sequence"          # FREE - Llama 3.1 70B
+ai-gemini "Summarize this article"            # Free tier
+ai-grok "What's new in tech?"                 # Paid API
 
 # Project-specific conversations
-ai-claude --context myproject "Let's design the authentication system"
-ai-claude --context myproject "What about OAuth2 flow?"
+ai-groq --context myproject "Let's design the authentication system"
+ai-groq --context myproject "What about OAuth2 flow?"
 
 # Context management
 ai-claude --list                    # List all conversation contexts
-ai-claude --switch another-project  # Switch active context
+ai-groq --switch another-project    # Switch active context
+
+# Works for all agents: ai-claude, ai-groq, ai-hf, ai-gemini, ai-grok
 
 # Container access (basic deployment)
-sudo podman exec gemini-agent /home/agent/gemini-chat "What is Kubernetes?"
+sudo podman exec groq-agent /home/agent/groq-chat "What is Kubernetes?"
 ```
 
 ---
@@ -98,6 +111,9 @@ make install
 
 ### AI Service Accounts
 - [Anthropic Console](https://console.anthropic.com/settings/keys) - Claude API key (paid)
+- **[Groq Console](https://console.groq.com/keys) - FREE API key (ultra-fast Llama 3.3 70B)** ⭐
+- **[HuggingFace](https://huggingface.co/settings/tokens) - FREE token (Llama 3.1 70B)** ⭐
+- [Google AI Studio](https://aistudio.google.com/app/apikey) - Gemini API key (free tier)
 - [X.ai](https://x.ai) - Grok access (Premium subscription)
 - [Google AI Studio](https://aistudio.google.com) - Gemini API key (free tier)
 
