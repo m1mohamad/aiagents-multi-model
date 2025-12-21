@@ -24,10 +24,26 @@ echo "  Groq:         https://console.groq.com/keys (FREE - ultra-fast)"
 echo "  HuggingFace:  https://huggingface.co/settings/tokens (FREE)"
 echo ""
 
+check_secret_exists() {
+    local agent=$1
+    test -f "/ai/$agent/context/.secrets.age"
+}
+
 configure_agent() {
     local agent=$1
     local prompt=$2
 
+    # Check if secret already exists
+    if check_secret_exists "$agent"; then
+        echo "  ℹ $agent: Secret already configured"
+        read -p "  Re-configure? (y/N): " reconfigure
+        if [ "$reconfigure" != "y" ] && [ "$reconfigure" != "Y" ]; then
+            echo "  ✓ $agent: Keeping existing secret"
+            return 0
+        fi
+    fi
+
+    # Prompt for new key
     read -p "$prompt (or Enter to skip): " KEY
     if [ ! -z "$KEY" ]; then
         echo "$KEY" | age -r $PUBLIC_KEY -o /ai/$agent/context/.secrets.age
@@ -36,8 +52,12 @@ configure_agent() {
         echo "  ✓ $agent configured"
         return 0
     else
-        echo "  ⊘ $agent skipped"
-        return 1
+        if check_secret_exists "$agent"; then
+            echo "  ✓ $agent: Keeping existing secret"
+        else
+            echo "  ⊘ $agent skipped"
+        fi
+        return 0  # Don't fail, just skip
     fi
 }
 
