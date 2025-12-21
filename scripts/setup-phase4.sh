@@ -50,6 +50,8 @@ echo "[2/6] Creating conversation history directories..."
 mkdir -p /ai/claude/history/default
 mkdir -p /ai/grok/history/default
 mkdir -p /ai/gemini/history/default
+mkdir -p /ai/groq/history/default
+mkdir -p /ai/huggingface/history/default
 mkdir -p /ai/shared/agent-messages
 
 chown -R $ACTUAL_USER:aiagent /ai/*/history
@@ -73,6 +75,12 @@ podman exec -u root grok-agent pip3 install requests --upgrade --no-cache-dir >/
 echo "  Installing in gemini-agent..."
 podman exec -u root gemini-agent pip3 install google-generativeai --upgrade --no-cache-dir >/dev/null 2>&1 || true
 
+echo "  Installing in groq-agent..."
+podman exec -u root groq-agent pip3 install requests --upgrade --no-cache-dir >/dev/null 2>&1 || true
+
+echo "  Installing in huggingface-agent..."
+podman exec -u root huggingface-agent pip3 install requests --upgrade --no-cache-dir >/dev/null 2>&1 || true
+
 echo "✓ Dependencies updated"
 echo ""
 
@@ -80,7 +88,7 @@ echo ""
 echo "[4/6] Installing full API implementations..."
 
 # Copy Python scripts to containers
-for script in claude-api.py grok-api.py gemini-api.py; do
+for script in claude-api.py grok-api.py gemini-api.py groq-api.py huggingface-api.py; do
     if [ -f "$SCRIPT_DIR/$script" ]; then
         agent_name=$(echo $script | cut -d'-' -f1)
 
@@ -98,7 +106,7 @@ done
 echo ""
 echo "  Installing project_manager.py..."
 if [ -f "$SCRIPT_DIR/../src/ai_agents/core/project_manager.py" ]; then
-    for agent in claude grok gemini; do
+    for agent in claude grok gemini groq huggingface; do
         podman cp "$SCRIPT_DIR/../src/ai_agents/core/project_manager.py" ${agent}-agent:/home/agent/project_manager.py
         podman exec -u root ${agent}-agent chown $USER_UID:$USER_GID /home/agent/project_manager.py
     done
@@ -133,15 +141,29 @@ cd /home/agent
 exec python3 /home/agent/gemini-api.py "$@"
 EOFGEMINI
 
+# Groq wrapper
+cat > /tmp/groq-chat << 'EOFGROQ'
+#!/bin/bash
+cd /home/agent
+exec python3 /home/agent/groq-api.py "$@"
+EOFGROQ
+
+# HuggingFace wrapper
+cat > /tmp/huggingface-chat << 'EOFHF'
+#!/bin/bash
+cd /home/agent
+exec python3 /home/agent/huggingface-api.py "$@"
+EOFHF
+
 # Install wrappers in containers
-for agent in claude grok gemini; do
+for agent in claude grok gemini groq huggingface; do
     podman cp /tmp/${agent}-chat ${agent}-agent:/home/agent/${agent}-chat
     podman exec -u root ${agent}-agent chmod +x /home/agent/${agent}-chat
     podman exec -u root ${agent}-agent chown $USER_UID:$USER_GID /home/agent/${agent}-chat
     echo "  ✓ Installed ${agent}-chat wrapper"
 done
 
-rm -f /tmp/claude-chat /tmp/grok-chat /tmp/gemini-chat
+rm -f /tmp/claude-chat /tmp/grok-chat /tmp/gemini-chat /tmp/groq-chat /tmp/huggingface-chat
 echo ""
 
 # Step 6: Create host-side convenience scripts
@@ -167,10 +189,22 @@ cat > /usr/local/bin/ai-gemini << 'EOFGEMINIHOST'
 sudo podman exec -i gemini-agent /home/agent/gemini-chat "$@"
 EOFGEMINIHOST
 
-chmod +x /usr/local/bin/ai-claude /usr/local/bin/ai-grok /usr/local/bin/ai-gemini
-chown $ACTUAL_USER:$ACTUAL_USER /usr/local/bin/ai-claude /usr/local/bin/ai-grok /usr/local/bin/ai-gemini
+# Groq helper
+cat > /usr/local/bin/ai-groq << 'EOFGROQHOST'
+#!/bin/bash
+sudo podman exec -i groq-agent /home/agent/groq-chat "$@"
+EOFGROQHOST
 
-echo "  ✓ Host CLI helpers installed (/usr/local/bin/ai-claude, ai-grok, ai-gemini)"
+# HuggingFace helper
+cat > /usr/local/bin/ai-hf << 'EOFHFHOST'
+#!/bin/bash
+sudo podman exec -i huggingface-agent /home/agent/huggingface-chat "$@"
+EOFHFHOST
+
+chmod +x /usr/local/bin/ai-claude /usr/local/bin/ai-grok /usr/local/bin/ai-gemini /usr/local/bin/ai-groq /usr/local/bin/ai-hf
+chown $ACTUAL_USER:$ACTUAL_USER /usr/local/bin/ai-claude /usr/local/bin/ai-grok /usr/local/bin/ai-gemini /usr/local/bin/ai-groq /usr/local/bin/ai-hf
+
+echo "  ✓ Host CLI helpers installed (/usr/local/bin/ai-claude, ai-grok, ai-gemini, ai-groq, ai-hf)"
 echo ""
 
 # Test installations
@@ -187,7 +221,7 @@ echo "    ai-claude --context project \"message\"  # Use specific context"
 echo "    ai-claude --list                        # List all contexts"
 echo "    ai-claude --switch project-auth         # Switch active context"
 echo ""
-echo "  Same for: ai-grok and ai-gemini"
+echo "  Same for: ai-grok, ai-gemini, ai-groq, ai-hf"
 echo ""
 echo "  Container (exec into container first):"
 echo "    sudo podman exec -it claude-agent bash"
@@ -233,10 +267,36 @@ else
     echo "  Gemini API: ⚠ No credentials configured"
 fi
 
+# Test Groq
+if [ -f /ai/groq/context/.secrets.age ]; then
+    echo -n "  Groq API: "
+    if podman exec groq-agent python3 -c "import requests; print('✓ Ready')" 2>/dev/null; then
+        echo "✓ Ready"
+    else
+        echo "✗ Failed"
+    fi
+else
+    echo "  Groq API: ⚠ No credentials configured"
+fi
+
+# Test HuggingFace
+if [ -f /ai/huggingface/context/.secrets.age ]; then
+    echo -n "  HuggingFace API: "
+    if podman exec huggingface-agent python3 -c "import requests; print('✓ Ready')" 2>/dev/null; then
+        echo "✓ Ready"
+    else
+        echo "✗ Failed"
+    fi
+else
+    echo "  HuggingFace API: ⚠ No credentials configured"
+fi
+
 echo ""
 echo "Quick Test (if credentials configured):"
-echo "  ai-gemini \"What is 2+2?\""
 echo "  ai-claude --context test \"Explain quantum computing briefly\""
+echo "  ai-groq \"What is 2+2?\" (FREE - ultra-fast Llama 3.3 70B)"
+echo "  ai-hf \"Calculate fibonacci\" (FREE - Llama 3.1 70B)"
+echo "  ai-gemini \"What is 2+2?\""
 echo "  ai-grok \"What's trending in AI?\""
 echo ""
 echo "Documentation: docs/phase4-conversations.md"
