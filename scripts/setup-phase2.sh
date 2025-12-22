@@ -176,6 +176,16 @@ podman run -d --pod ai-agents --name huggingface-agent \
 echo "  ✓ huggingface-agent launched (FREE)"
 echo ""
 
+# Step 5.5: Fix container permissions
+echo "[5.5/7] Fixing container permissions..."
+for container in claude-agent grok-agent gemini-agent groq-agent huggingface-agent; do
+    # Ensure /home/agent is accessible (755 allows entry)
+    podman exec -u root $container chmod 755 /home/agent
+    podman exec -u root $container chown $USER_UID:$USER_GID /home/agent
+done
+echo "✓ Container permissions fixed"
+echo ""
+
 # Step 6: Verify containers
 echo "[6/7] Verifying container SDKs..."
 sleep 2
