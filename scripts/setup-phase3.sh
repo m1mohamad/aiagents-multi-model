@@ -49,17 +49,17 @@ echo ""
 
 # Step 2: Install age in containers and fix permissions
 echo "[2/6] Setting up age in containers..."
-for container in claude-agent grok-agent gemini-agent; do
+for container in claude-agent grok-agent gemini-agent groq-agent huggingface-agent; do
     echo "  Configuring $container..."
     # Install age
     podman exec -u root $container bash -c "apt update >/dev/null 2>&1 && apt install -y age >/dev/null 2>&1" 2>/dev/null || true
-    
+
     # Fix /home/agent permissions (allow entry)
     podman exec -u root $container chmod 755 /home/agent
-    
+
     # Copy age key
     podman cp "$USER_HOME/.age-key.txt" $container:/home/agent/.age-key.txt 2>/dev/null || true
-    
+
     # Fix ownership to match container user
     podman exec -u root $container chown $USER_UID:$USER_GID /home/agent/.age-key.txt
     podman exec -u root $container chmod 600 /home/agent/.age-key.txt
@@ -69,7 +69,7 @@ echo ""
 
 # Step 3: Create context directories
 echo "[3/6] Creating context directories..."
-mkdir -p /ai/claude/context /ai/grok/context /ai/gemini/context
+mkdir -p /ai/claude/context /ai/grok/context /ai/gemini/context /ai/groq/context /ai/huggingface/context
 chown -R $ACTUAL_USER:aiagent /ai/*/context
 chmod 700 /ai/*/context
 echo "✓ Context directories ready"
@@ -150,11 +150,12 @@ EOFGEMINI
 chmod +x /tmp/ai-wrappers/*
 
 # Install in containers
-for container in claude-agent grok-agent gemini-agent; do
+for container in claude-agent grok-agent gemini-agent groq-agent huggingface-agent; do
     podman cp /tmp/ai-wrappers/claude-chat $container:/home/agent/claude-chat 2>/dev/null || true
     podman cp /tmp/ai-wrappers/grok-chat $container:/home/agent/grok-chat 2>/dev/null || true
     podman cp /tmp/ai-wrappers/gemini-chat $container:/home/agent/gemini-chat 2>/dev/null || true
-    podman exec $container chmod +x /home/agent/*-chat 2>/dev/null || true
+    podman exec -u root $container chmod +x /home/agent/*-chat 2>/dev/null || true
+    podman exec -u root $container chown $USER_UID:$USER_GID /home/agent/*-chat 2>/dev/null || true
 done
 
 rm -rf /tmp/ai-wrappers
