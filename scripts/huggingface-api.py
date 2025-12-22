@@ -20,7 +20,7 @@ CONTEXT_DIR = Path("/ai/huggingface/context")
 HISTORY_DIR = Path("/ai/huggingface/history")
 SECRETS_FILE = CONTEXT_DIR / ".secrets.age"
 AGE_KEY_FILE = Path.home() / ".age-key.txt"
-HF_API_URL = "https://api-inference.huggingface.co/models/meta-llama/Llama-3.1-70B-Instruct"
+HF_API_URL = "https://router.huggingface.co/models/meta-llama/Llama-3.1-70B-Instruct"
 
 
 def decrypt_api_key():
