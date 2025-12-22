@@ -62,11 +62,11 @@ echo ""
 
 # Step 4: Create directory structure
 echo "[4/8] Creating /ai directory structure..."
-mkdir -p /ai/{shared/references,claude/{context,history,workspace},grok/{context,history},gemini/{context,history},logs}
+mkdir -p /ai/{shared/references,claude/{context,history,workspace},grok/{context,history},gemini/{context,history},groq/{context,history},huggingface/{context,history},logs}
 chown -R $ACTUAL_USER:aiagent /ai
 chmod 750 /ai
 chmod 755 /ai/shared
-chmod 700 /ai/{claude,grok,gemini}
+chmod 700 /ai/{claude,grok,gemini,groq,huggingface}
 chmod 733 /ai/logs
 echo "✓ Directory structure created"
 echo ""
