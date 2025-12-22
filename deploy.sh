@@ -101,14 +101,22 @@ echo ""
 CLAUDE_EXISTS=false
 GROK_EXISTS=false
 GEMINI_EXISTS=false
+GROQ_EXISTS=false
+HUGGINGFACE_EXISTS=false
 
 [ -f /ai/claude/context/.secrets.age ] && CLAUDE_EXISTS=true
 [ -f /ai/grok/context/.secrets.age ] && GROK_EXISTS=true
 [ -f /ai/gemini/context/.secrets.age ] && GEMINI_EXISTS=true
+[ -f /ai/groq/context/.secrets.age ] && GROQ_EXISTS=true
+[ -f /ai/huggingface/context/.secrets.age ] && HUGGINGFACE_EXISTS=true
+
+# Count running containers
+CONTAINER_COUNT=$(sudo podman ps --filter pod=ai-agents --format "{{.Names}}" 2>/dev/null | wc -l)
 
 echo "System Status:"
-echo "  Containers:"
-sudo podman ps --filter pod=ai-agents --format "    ✓ {{.Names}}" 2>/dev/null || echo "    ✗ No containers running"
+echo ""
+echo -e "  ${GREEN}✓ Containers Deployed: $CONTAINER_COUNT/5${NC}"
+sudo podman ps --filter pod=ai-agents --format "    • {{.Names}} ({{.Status}})" 2>/dev/null || echo "    ✗ No containers running"
 echo ""
 
 echo "  Credentials:"
@@ -116,6 +124,18 @@ if [ "$CLAUDE_EXISTS" = true ]; then
     echo -e "    ${GREEN}✓ Claude configured${NC}"
 else
     echo -e "    ${YELLOW}⚠ Claude not configured${NC}"
+fi
+
+if [ "$GROQ_EXISTS" = true ]; then
+    echo -e "    ${GREEN}✓ Groq configured (FREE)${NC}"
+else
+    echo -e "    ${YELLOW}⚠ Groq not configured (FREE)${NC}"
+fi
+
+if [ "$HUGGINGFACE_EXISTS" = true ]; then
+    echo -e "    ${GREEN}✓ HuggingFace configured (FREE)${NC}"
+else
+    echo -e "    ${YELLOW}⚠ HuggingFace not configured (FREE)${NC}"
 fi
 
 if [ "$GROK_EXISTS" = true ]; then
@@ -133,41 +153,61 @@ fi
 echo ""
 
 # Next steps based on credential status
-if [ "$CLAUDE_EXISTS" = false ] || [ "$GROK_EXISTS" = false ] || [ "$GEMINI_EXISTS" = false ]; then
+if [ "$CLAUDE_EXISTS" = false ] || [ "$GROK_EXISTS" = false ] || [ "$GEMINI_EXISTS" = false ] || [ "$GROQ_EXISTS" = false ] || [ "$HUGGINGFACE_EXISTS" = false ]; then
     echo "Next Steps:"
-    echo "1. Extract AI tokens (see docs/token-extraction-guide.md)"
+    echo "1. Get API keys/tokens:"
+    echo "   • Claude:       https://claude.ai (Cookie: sessionKey)"
+    echo "   • Groq (FREE):  https://console.groq.com/keys"
+    echo "   • HF (FREE):    https://huggingface.co/settings/tokens"
+    echo "   • Grok:         https://console.x.ai"
+    echo "   • Gemini:       https://aistudio.google.com/app/apikey"
+    echo ""
     echo "2. Encrypt credentials:"
     echo ""
-    
+
     PUBLIC_KEY=$(grep "public key:" ~$ACTUAL_USER/.age-key.txt 2>/dev/null | awk '{print $NF}' || echo "YOUR_PUBLIC_KEY")
-    
+
     if [ "$CLAUDE_EXISTS" = false ]; then
         echo "   Claude:"
         echo "   echo 'YOUR_CLAUDE_TOKEN' | age -r $PUBLIC_KEY -o /ai/claude/context/.secrets.age"
         echo ""
     fi
-    
+
+    if [ "$GROQ_EXISTS" = false ]; then
+        echo "   Groq (FREE):"
+        echo "   echo 'YOUR_GROQ_KEY' | age -r $PUBLIC_KEY -o /ai/groq/context/.secrets.age"
+        echo ""
+    fi
+
+    if [ "$HUGGINGFACE_EXISTS" = false ]; then
+        echo "   HuggingFace (FREE):"
+        echo "   echo 'YOUR_HF_TOKEN' | age -r $PUBLIC_KEY -o /ai/huggingface/context/.secrets.age"
+        echo ""
+    fi
+
     if [ "$GROK_EXISTS" = false ]; then
         echo "   Grok:"
         echo "   echo 'YOUR_GROK_TOKEN' | age -r $PUBLIC_KEY -o /ai/grok/context/.secrets.age"
         echo ""
     fi
-    
+
     if [ "$GEMINI_EXISTS" = false ]; then
         echo "   Gemini:"
         echo "   echo 'YOUR_GEMINI_KEY' | age -r $PUBLIC_KEY -o /ai/gemini/context/.secrets.age"
         echo ""
     fi
-    
+
     echo "3. Fix permissions: sudo chmod 600 /ai/*/context/.secrets.age"
     echo "4. Re-run: sudo bash scripts/setup-phase3.sh"
 else
     echo "All credentials configured!"
     echo ""
     echo "Test Commands:"
-    echo "  sudo podman exec gemini-agent /home/agent/gemini-chat \"Hello\""
     echo "  sudo podman exec claude-agent /home/agent/claude-chat \"Hello\""
+    echo "  sudo podman exec groq-agent /home/agent/groq-chat \"Hello\" (FREE)"
+    echo "  sudo podman exec huggingface-agent /home/agent/huggingface-chat \"Hello\" (FREE)"
     echo "  sudo podman exec grok-agent /home/agent/grok-chat \"Hello\""
+    echo "  sudo podman exec gemini-agent /home/agent/gemini-chat \"Hello\""
 fi
 
 echo ""
