@@ -20,7 +20,8 @@ CONTEXT_DIR = Path("/ai/huggingface/context")
 HISTORY_DIR = Path("/ai/huggingface/history")
 SECRETS_FILE = CONTEXT_DIR / ".secrets.age"
 AGE_KEY_FILE = Path.home() / ".age-key.txt"
-HF_API_URL = "https://router.huggingface.co/models/meta-llama/Llama-3.1-70B-Instruct"
+HF_API_URL = "https://router.huggingface.co/v1/chat/completions"
+HF_MODEL = "meta-llama/Llama-3.1-70B-Instruct"
 
 
 def decrypt_api_key():
@@ -186,19 +187,18 @@ def chat(message, context_name=None, project_name=None, max_history=10):
     # Load history
     history = load_conversation_history(context_name, max_history)
 
-    # Build prompt (HF uses text format, not messages array)
-    prompt = ""
+    # Build messages array (OpenAI format)
+    messages = []
     for msg in history:
-        if msg["role"] == "user":
-            prompt += f"User: {msg['content']}\n"
-        else:
-            prompt += f"Assistant: {msg['content']}\n"
-    prompt += f"User: {message}\nAssistant:"
+        messages.append({"role": msg["role"], "content": msg["content"]})
+
+    # Add current message
+    messages.append({"role": "user", "content": message})
 
     # Save user message
     save_message(context_name, "user", message)
 
-    # Call HuggingFace API
+    # Call HuggingFace API (OpenAI-compatible format)
     try:
         headers = {
             "Authorization": f"Bearer {api_key}",
@@ -206,29 +206,24 @@ def chat(message, context_name=None, project_name=None, max_history=10):
         }
 
         payload = {
-            "inputs": prompt,
-            "parameters": {
-                "max_new_tokens": 2048,
-                "temperature": 0.7,
-                "return_full_text": False
-            }
+            "model": HF_MODEL,
+            "messages": messages,
+            "max_tokens": 2048,
+            "temperature": 0.7
         }
 
         response = requests.post(
             HF_API_URL,
             headers=headers,
             json=payload,
-            timeout=60  # HF can be slower
+            timeout=60
         )
 
         response.raise_for_status()
         result = response.json()
 
-        # HF returns different format
-        if isinstance(result, list) and len(result) > 0:
-            assistant_message = result[0].get("generated_text", "")
-        else:
-            assistant_message = result.get("generated_text", "")
+        # Parse OpenAI-compatible response
+        assistant_message = result["choices"][0]["message"]["content"]
 
         # Save assistant response
         save_message(context_name, "assistant", assistant_message)
